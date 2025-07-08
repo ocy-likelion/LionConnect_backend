@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>이력서 기본정보 등록</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        form { max-width: 500px; margin: auto; }
+        label { display: block; margin-top: 15px; }
+        input, textarea, select { width: 100%; padding: 8px; margin-top: 5px; }
+        button { margin-top: 20px; padding: 10px 20px; }
+    </style>
+</head>
+<body>
+    <h2>이력서 기본정보 등록</h2>
+    <form action="/resumes/basic-info/" method="post" enctype="multipart/form-data">
+        <label>프로필 사진 <input type="file" name="profile_image"></label>
+        <label>이름 <input type="text" name="name" required></label>
+        <label>이메일 <input type="email" name="email" required></label>
+        <label>전화번호 <input type="text" name="phone" required></label>
+        <label>직종
+            <select name="job_type" required>
+                <option value="">선택</option>
+                <option value="프론트엔드">프론트엔드</option>
+                <option value="백엔드">백엔드</option>
+                <option value="풀스택">풀스택</option>
+                <option value="기획">기획</option>
+                <option value="디자인">디자인</option>
+            </select>
+        </label>
+        <label>학교 <input type="text" name="school" required></label>
+        <label>전공 <input type="text" name="major" required></label>
+        <label>성적 <input type="text" name="grade" required></label>
+        <label>재학기간 <input type="text" name="period" placeholder="2018-2022" required></label>
+        <label>한 줄 자기소개 <input type="text" name="short_intro" required></label>
+        <label>자기소개 <textarea name="intro" rows="4" required></textarea></label>
+        <button type="submit">등록</button>
+    </form>
+</body>
+</html> 

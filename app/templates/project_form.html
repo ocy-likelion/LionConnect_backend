@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>프로젝트 등록</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        form { max-width: 500px; margin: auto; }
+        label { display: block; margin-top: 15px; }
+        input, textarea { width: 100%; padding: 8px; margin-top: 5px; }
+        button { margin-top: 20px; padding: 10px 20px; }
+    </style>
+</head>
+<body>
+    <h2>프로젝트 등록</h2>
+    <form action="/projects/" method="post">
+        <label>포트폴리오 ID <input type="number" name="portfolio_id" required></label>
+        <label>프로젝트 명 <input type="text" name="project_name" required></label>
+        <label>프로젝트 기간 <input type="text" name="project_period" placeholder="2023.01 ~ 2023.06" required></label>
+        <label>프로젝트 한 줄 소개 <input type="text" name="project_intro" required></label>
+        <label>구현 내용 <textarea name="description" rows="3" required></textarea></label>
+        <label>담당 역할 <input type="text" name="role" required></label>
+        <label>기술 스택 <input type="text" name="tech_stack" required></label>
+        <button type="submit">등록</button>
+    </form>
+</body>
+</html> 

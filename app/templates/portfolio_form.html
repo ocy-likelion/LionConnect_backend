@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>포트폴리오 등록</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        form { max-width: 500px; margin: auto; }
+        label { display: block; margin-top: 15px; }
+        input, textarea, select { width: 100%; padding: 8px; margin-top: 5px; }
+        button { margin-top: 20px; padding: 10px 20px; }
+    </style>
+</head>
+<body>
+    <h2>포트폴리오 등록</h2>
+    <form action="/portfolios/" method="post" enctype="multipart/form-data">
+        <label>이력서 ID <input type="number" name="resume_id" required></label>
+        <label>대표 포트폴리오 <input type="checkbox" name="is_representative" value="true"></label>
+        <label>대표 이미지 <input type="file" name="image"></label>
+        <label>프로젝트 URL <input type="url" name="project_url"></label>
+        <label>프로젝트 명 <input type="text" name="project_name" required></label>
+        <label>프로젝트 한 줄 소개 <input type="text" name="project_intro" required></label>
+        <label>프로젝트 기간 <input type="text" name="project_period" placeholder="2023.01 ~ 2023.06" required></label>
+        <label>담당 역할 <input type="text" name="role" required></label>
+        <button type="submit">등록</button>
+    </form>
+</body>
+</html> 
