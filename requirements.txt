@@ -6,4 +6,5 @@ passlib
 python-jose
 requests
 psycopg2-binary
-jinja2 
+jinja2
+email-validator
