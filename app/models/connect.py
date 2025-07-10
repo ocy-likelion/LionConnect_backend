@@ -11,4 +11,9 @@ class ConnectRequest(Base):
     student_user_id = Column(Integer, nullable=False)  # 수료생 user_id
     portfolio_id = Column(Integer, nullable=False)
     message = Column(Text, nullable=True)
+    position = Column(String, nullable=True)  # 채용 포지션
+    job_description = Column(String, nullable=True)  # 직무 설명
+    required_stack = Column(String, nullable=True)  # 필수 기술 스택
+    career_level = Column(String, nullable=True)  # 희망 경력 수준
+    employment_type = Column(String, nullable=True)  # 고용 수준
     created_at = Column(DateTime, default=datetime.utcnow) 

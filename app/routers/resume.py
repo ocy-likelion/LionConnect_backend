@@ -167,55 +167,54 @@ def create_resume_basic_info(
 
 @router.get(
     "/{resume_id}/detail",
-    summary="이력서 상세 정보 조회",
+    summary="이력서 상세 정보 전체 조회",
     description="""
-    ## 특정 이력서의 모든 정보를 조회합니다.
-    
-    ### 기능 설명
-    - 이력서 기본 정보
-    - 포트폴리오 목록
-    - 프로젝트 목록
-    - 수상 내역
-    - 교육 내역
-    
-    ### 경로 파라미터
-    - `resume_id`: 조회할 이력서의 ID (정수)
-    
-    ### 응답 데이터
-    - `resume`: 이력서 기본 정보
-    - `portfolios`: 포트폴리오 목록
-    - `projects`: 프로젝트 목록
-    - `awards`: 수상 내역
-    - `educations`: 교육 내역
-    
-    ### 에러 응답
-    - `404 Not Found`: 이력서를 찾을 수 없음
+    특정 이력서의 모든 정보를 상세하게 조회합니다.\n
+    - 이력서 기본 정보, 포트폴리오, 프로젝트, 수상 및 활동, 교육 이력 등\n    - 모든 데이터는 DB에 저장된 원본값 그대로(가공 없이) 반환됩니다.\n
+    **응답:**\n    - `resume`: 이력서 기본 정보 객체\n    - `portfolios`: 포트폴리오 객체 리스트\n    - `projects`: 프로젝트 객체 리스트\n    - `awards`: 수상 및 활동 객체 리스트\n    - `educations`: 교육 이력 객체 리스트
     """,
     responses={
         200: {
-            "description": "이력서 상세 정보 조회 성공",
+            "description": "이력서 상세 정보 전체 조회 성공",
             "content": {
                 "application/json": {
                     "example": {
                         "resume": {
                             "id": 1,
                             "user_id": 1,
+                            "profile_image": "/media/profile/user1.jpg",
                             "name": "홍길동",
                             "email": "hong@example.com",
+                            "phone": "010-1234-5678",
                             "job_type": "프론트엔드 개발자",
                             "school": "서울대학교",
-                            "major": "컴퓨터공학과"
+                            "major": "컴퓨터공학과",
+                            "grade": "4학년",
+                            "period": "2020-2024",
+                            "short_intro": "웹 개발에 열정을 가진 학생입니다.",
+                            "intro": "프론트엔드 개발에 관심이 많아 React, Vue.js 등을 학습하고 있습니다...",
+                            "created_at": "2024-01-01T00:00:00",
+                            "updated_at": "2024-01-01T00:00:00"
                         },
                         "portfolios": [
                             {
                                 "id": 1,
-                                "title": "웹 포트폴리오",
-                                "description": "React로 만든 포트폴리오"
+                                "resume_id": 1,
+                                "is_representative": True,
+                                "image": "/media/portfolio/1.png",
+                                "project_url": "https://github.com/example/project",
+                                "project_name": "쇼핑몰 웹사이트",
+                                "project_intro": "React와 Node.js를 활용한 풀스택 쇼핑몰",
+                                "project_period": "2023-01 ~ 2023-06",
+                                "role": "프론트엔드 개발",
+                                "created_at": "2023-06-30T12:00:00",
+                                "updated_at": "2023-07-01T12:00:00"
                             }
                         ],
                         "projects": [
                             {
                                 "id": 1,
+                                "portfolio_id": 1,
                                 "title": "쇼핑몰 프로젝트",
                                 "description": "React + Node.js 쇼핑몰"
                             }
@@ -223,15 +222,21 @@ def create_resume_basic_info(
                         "awards": [
                             {
                                 "id": 1,
-                                "title": "우수상",
-                                "organization": "대학 프로그래밍 대회"
+                                "resume_id": 1,
+                                "name": "정보처리기사",
+                                "date": "2024-06",
+                                "organization": "한국산업인력공단",
+                                "created_at": "2024-06-30T12:00:00"
                             }
                         ],
                         "educations": [
                             {
                                 "id": 1,
-                                "institution": "서울대학교",
-                                "degree": "컴퓨터공학 학사"
+                                "resume_id": 1,
+                                "institution": "멋쟁이사자처럼 대학",
+                                "period": "2023-01 ~ 2023-06",
+                                "name": "AI 엔지니어링 부트캠프",
+                                "created_at": "2023-06-30T12:00:00"
                             }
                         ]
                     }
@@ -256,9 +261,8 @@ def get_resume_detail(
 ):
     """
     특정 이력서의 모든 상세 정보를 조회합니다.
-    
-    이력서 기본 정보와 함께 관련된 포트폴리오, 프로젝트, 
-    수상 내역, 교육 내역을 모두 포함하여 반환합니다.
+    이력서 기본 정보와 함께 관련된 포트폴리오, 프로젝트, 수상 내역, 교육 내역을 모두 포함하여,
+    DB에 저장된 원본값 그대로(가공 없이) 반환합니다.
     """
     resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.id == resume_id).first()
     if not resume:
@@ -267,6 +271,7 @@ def get_resume_detail(
     projects = db.query(Project).filter(Project.portfolio_id.in_([p.id for p in portfolios])).all()
     awards = db.query(Award).filter(Award.resume_id == resume_id).all()
     educations = db.query(Education).filter(Education.resume_id == resume_id).all()
+    # 모든 필드를 원본값 그대로 반환
     return {
         "resume": resume,
         "portfolios": portfolios,

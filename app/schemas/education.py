@@ -11,3 +11,9 @@ class EducationResponse(BaseModel):
     created_at: datetime
     class Config:
         orm_mode = True 
+
+class EducationCreate(BaseModel):
+    resume_id: int
+    institution: str
+    period: str
+    name: str 

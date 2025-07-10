@@ -11,3 +11,9 @@ class AwardResponse(BaseModel):
     created_at: datetime
     class Config:
         orm_mode = True 
+
+class AwardCreate(BaseModel):
+    resume_id: int
+    name: str
+    date: str
+    organization: str 
