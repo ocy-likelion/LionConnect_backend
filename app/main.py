@@ -3,6 +3,8 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from app.routers import resume, portfolio, project, auth, talent
 import os
+from app.routers.award import router as award_router
+from app.routers.education import router as education_router
 
 app = FastAPI(
     title="🦁 LionConnect API",
@@ -76,6 +78,8 @@ app.include_router(portfolio.router)
 app.include_router(project.router)
 app.include_router(auth.router)
 app.include_router(talent.router)
+app.include_router(award_router)
+app.include_router(education_router)
 
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
 
