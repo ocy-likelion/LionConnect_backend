@@ -1,41 +1,36 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
-from enum import Enum
 from datetime import datetime
+from app.models.user import UserTypeEnum, OAuthProviderEnum
 
-class UserTypeEnum(str, Enum):
-    student = "student"
-    company = "company"
+class UserBase(BaseModel):
+    email: EmailStr
 
-class StudentProfileCreate(BaseModel):
+class UserCreateStudent(UserBase):
+    password: str
     course_name: str
     course_generation: str
     tech_stack: str
 
-class CompanyProfileCreate(BaseModel):
+class UserCreateCompany(UserBase):
+    password: str
     company_name: str
     industry: str
     size: str
-    intro: Optional[str] = None
-
-class UserBase(BaseModel):
-    email: EmailStr
-    user_type: UserTypeEnum
-
-class UserCreateStudent(UserBase, StudentProfileCreate):
-    password: str
-
-class UserCreateCompany(UserBase, CompanyProfileCreate):
-    password: str
+    intro: str
 
 class UserResponse(BaseModel):
     id: int
-    email: EmailStr
+    email: str
     user_type: UserTypeEnum
+    oauth_provider: Optional[OAuthProviderEnum] = None
+    name: Optional[str] = None
+    profile_image: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -43,4 +38,14 @@ class LoginRequest(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
-    token_type: str = "bearer" 
+    token_type: str = "bearer"
+    user: UserResponse
+
+class OAuthLoginRequest(BaseModel):
+    user_type: UserTypeEnum = UserTypeEnum.student
+
+class OAuthCallbackResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+    is_new_user: bool = False 
