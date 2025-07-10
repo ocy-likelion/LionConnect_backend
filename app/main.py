@@ -2,7 +2,6 @@ from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from app.routers import resume, portfolio, project, auth, talent
-from app.utils.oauth import oauth
 import os
 
 app = FastAPI(
@@ -70,8 +69,7 @@ app = FastAPI(
     ]
 )
 
-# OAuth 미들웨어 추가
-app.add_middleware(oauth)
+# OAuth 미들웨어는 사용하지 않음 (app.add_middleware(oauth) 삭제)
 
 app.include_router(resume.router)
 app.include_router(portfolio.router)
