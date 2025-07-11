@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>LionConnect - 메인</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f7f8fa; margin: 0; }
+        .container { max-width: 500px; margin: 60px auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.07); padding: 2.5rem 2rem; text-align: center; }
+        h1 { color: #333; margin-bottom: 1.5rem; }
+        .nav-btns { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
+        .nav-btns a { display: block; padding: 1rem; border-radius: 8px; background: #667eea; color: #fff; text-decoration: none; font-size: 1.1rem; font-weight: 500; transition: background 0.2s; }
+        .nav-btns a:hover { background: #5a67d8; }
+        .api-links { margin-top: 2rem; }
+        .api-links a { color: #764ba2; text-decoration: underline; margin: 0 0.5rem; }
+        .footer { margin-top: 2.5rem; color: #aaa; font-size: 0.95rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🦁 LionConnect</h1>
+        <div class="nav-btns">
+            <a href="/resume-form">이력서 등록</a>
+            <a href="/portfolio-form">포트폴리오 등록</a>
+            <a href="/project-form">프로젝트 등록</a>
+            <a href="/talents">인재 탐색 (API)</a>
+        </div>
+        <div class="api-links">
+            <a href="/docs" target="_blank">Swagger 문서</a> |
+            <a href="/redoc" target="_blank">Redoc 문서</a>
+        </div>
+        <div class="footer">
+            © 2024 LionConnect. All rights reserved.
+        </div>
+    </div>
+</body>
+</html> 
