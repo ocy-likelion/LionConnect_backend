@@ -148,30 +148,64 @@ def create_connect_request(
     기업이 관심 있는 인재에게 연결 요청을 보내며,
     중복 요청을 방지하고 Slack 알림을 통해 실시간으로 알림을 전송합니다.
     """
-    # 중복 요청 방지
-    exists = db.query(ConnectRequest).filter(
-        ConnectRequest.company_user_id == req.company_user_id,
-        ConnectRequest.student_user_id == req.student_user_id,
-        ConnectRequest.portfolio_id == req.portfolio_id
-    ).first()
-    if exists:
-        raise HTTPException(status_code=400, detail="이미 커넥트 요청이 존재합니다.")
-    connect = ConnectRequest(
-        company_user_id=req.company_user_id,
-        student_user_id=req.student_user_id,
-        portfolio_id=req.portfolio_id,
-        message=req.message,
-        position=req.position,
-        job_description=req.job_description,
-        required_stack=req.required_stack,
-        career_level=req.career_level,
-        employment_type=req.employment_type
-    )
-    db.add(connect)
-    db.commit()
-    db.refresh(connect)
-    # 슬랙 알림 전송
-    if SLACK_WEBHOOK_URL:
-        msg = f"[커넥트 요청] 기업ID: {req.company_user_id} → 수료생ID: {req.student_user_id} (포트폴리오ID: {req.portfolio_id})\n포지션: {req.position or '-'}\n직무설명: {req.job_description or '-'}\n필수스택: {req.required_stack or '-'}\n경력수준: {req.career_level or '-'}\n고용수준: {req.employment_type or '-'}\n메시지: {req.message or '-'}"
-        send_slack_message(SLACK_WEBHOOK_URL, msg)
-    return connect 
+    try:
+        # 입력 데이터 검증
+        if not req.company_user_id or not req.student_user_id or not req.portfolio_id:
+            raise HTTPException(status_code=400, detail="필수 필드가 누락되었습니다.")
+        
+        # 포트폴리오 존재 여부 확인
+        portfolio = db.query(Portfolio).filter(Portfolio.id == req.portfolio_id).first()
+        if not portfolio:
+            raise HTTPException(status_code=404, detail="포트폴리오를 찾을 수 없습니다.")
+        
+        # 사용자 존재 여부 확인
+        company_user = db.query(User).filter(User.id == req.company_user_id).first()
+        student_user = db.query(User).filter(User.id == req.student_user_id).first()
+        
+        if not company_user:
+            raise HTTPException(status_code=404, detail="기업 사용자를 찾을 수 없습니다.")
+        if not student_user:
+            raise HTTPException(status_code=404, detail="학생 사용자를 찾을 수 없습니다.")
+        
+        # 중복 요청 방지
+        exists = db.query(ConnectRequest).filter(
+            ConnectRequest.company_user_id == req.company_user_id,
+            ConnectRequest.student_user_id == req.student_user_id,
+            ConnectRequest.portfolio_id == req.portfolio_id
+        ).first()
+        if exists:
+            raise HTTPException(status_code=400, detail="이미 커넥트 요청이 존재합니다.")
+        
+        # 연결 요청 생성
+        connect = ConnectRequest(
+            company_user_id=req.company_user_id,
+            student_user_id=req.student_user_id,
+            portfolio_id=req.portfolio_id,
+            message=req.message,
+            position=req.position,
+            job_description=req.job_description,
+            required_stack=req.required_stack,
+            career_level=req.career_level,
+            employment_type=req.employment_type
+        )
+        db.add(connect)
+        db.commit()
+        db.refresh(connect)
+        
+        # 슬랙 알림 전송 (실패해도 전체 요청은 성공)
+        if SLACK_WEBHOOK_URL:
+            try:
+                msg = f"[커넥트 요청] 기업ID: {req.company_user_id} → 수료생ID: {req.student_user_id} (포트폴리오ID: {req.portfolio_id})\n포지션: {req.position or '-'}\n직무설명: {req.job_description or '-'}\n필수스택: {req.required_stack or '-'}\n경력수준: {req.career_level or '-'}\n고용수준: {req.employment_type or '-'}\n메시지: {req.message or '-'}"
+                send_slack_message(SLACK_WEBHOOK_URL, msg)
+            except Exception as e:
+                # Slack 알림 실패는 로그만 남기고 전체 요청은 성공으로 처리
+                print(f"Slack 알림 전송 실패 (요청은 성공): {str(e)}")
+        
+        return connect
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"연결 요청 생성 중 오류: {str(e)}")
+        raise HTTPException(status_code=500, detail="연결 요청 생성 중 오류가 발생했습니다.") 
