@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.routers import resume, portfolio, project, auth, talent
 import os
 from app.routers.award import router as award_router
@@ -78,12 +79,15 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",  # React 개발 서버
         "http://localhost:3001",  # 다른 포트의 개발 서버
-        "https://lion-connect.vercel.app/",  # 프로덕션 프론트엔드 도메인 (실제 도메인으로 변경 필요)
+        "https://lion-connect.vercel.app",  # 프로덕션 프론트엔드 도메인 (실제 도메인으로 변경 필요)
     ],
     allow_credentials=True,
     allow_methods=["*"],  # 모든 HTTP 메서드 허용
     allow_headers=["*"],  # 모든 헤더 허용
 )
+
+# 정적 파일 제공 (업로드된 이미지 등)
+app.mount("/media", StaticFiles(directory="app/media"), name="media")
 
 # OAuth 미들웨어는 사용하지 않음 (app.add_middleware(oauth) 삭제)
 
