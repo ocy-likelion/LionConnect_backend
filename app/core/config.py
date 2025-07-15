@@ -9,7 +9,7 @@ config = Config('.env')
 # 개발 환경에서는 SQLite 사용 (파일이 없으면 메모리 DB)
 SQLALCHEMY_DATABASE_URL = os.environ.get(
     "DATABASE_URL",
-    "sqlite:///./test.db"  # 로컬 SQLite 파일 사용
+    "postgresql://lionconnect_user:gKIoR3YWUjnOjpbZgPXWygVncYMaSi0o@dpg-d1mek9e3jp1c73ennt6g-a/lionconnect"
 )
 
 # DB 종류에 따라 connect_args 분기
