@@ -115,4 +115,7 @@ def project_form(request: Request):
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request}) 
+    return templates.TemplateResponse("index.html", {"request": request})
+
+import os
+os.makedirs("app/media/profile", exist_ok=True) 
