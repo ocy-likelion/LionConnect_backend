@@ -8,7 +8,8 @@ class Portfolio(Base):
     __tablename__ = "portfolio"
 
     id = Column(Integer, primary_key=True, index=True)
-    resume_id = Column(Integer, nullable=False)  # 이력서(수료생) 참조
+    user_id = Column(Integer, nullable=False)  # 추가
+    # resume_id = Column(Integer, nullable=False)  # 1인 1이력서 구조라면 불필요
     is_representative = Column(Boolean, default=False)
     image = Column(String, nullable=True)
     project_url = Column(String, nullable=True)

@@ -29,6 +29,7 @@ def get_db():
     
     ### 요청 데이터 (multipart/form-data)
     - `portfolio_id`: 연결할 포트폴리오 ID (필수)
+    - `user_id`: 연결할 사용자 ID (필수)
     - `project_name`: 프로젝트명 (필수)
     - `project_period`: 프로젝트 기간 (필수)
     - `project_intro`: 프로젝트 소개 (필수)
@@ -86,6 +87,7 @@ def get_db():
 )
 def create_project(
     portfolio_id: int = Form(..., description="연결할 포트폴리오 ID"),
+    user_id: int = Form(..., description="연결할 사용자 ID"),
     project_name: str = Form(..., description="프로젝트명"),
     project_period: str = Form(..., description="프로젝트 기간"),
     project_intro: str = Form(..., description="프로젝트 소개"),
@@ -102,6 +104,7 @@ def create_project(
     """
     project = Project(
         portfolio_id=portfolio_id,
+        user_id=user_id,
         project_name=project_name,
         project_period=project_period,
         project_intro=project_intro,
@@ -121,21 +124,21 @@ def create_project(
     response_model=List[ProjectResponse],
     summary="프로젝트 목록 조회",
     description="""
-    ## 특정 포트폴리오의 프로젝트 목록을 조회합니다.
+    ## 특정 사용자의 프로젝트 목록을 조회합니다.
     
     ### 기능 설명
     - 포트폴리오 ID로 연결된 모든 프로젝트 조회
     - 프로젝트의 기본 정보 목록 반환
     
     ### 쿼리 파라미터
-    - `portfolio_id`: 조회할 포트폴리오 ID (필수)
+    - `user_id`: 조회할 사용자 ID (필수)
     
     ### 응답 데이터
     - 프로젝트 객체 배열
     
     ### 예시
     ```
-    GET /projects?portfolio_id=1
+    GET /projects?user_id=1
     ```
     """,
     responses={
@@ -171,13 +174,13 @@ def create_project(
     }
 )
 def get_projects(
-    portfolio_id: int = Query(..., description="조회할 포트폴리오 ID"), 
+    user_id: int = Query(..., description="조회할 사용자 ID"), 
     db: Session = Depends(get_db)
 ):
     """
     특정 포트폴리오의 프로젝트 목록을 조회합니다.
     """
-    return db.query(Project).filter(Project.portfolio_id == portfolio_id).all()
+    return db.query(Project).filter(Project.user_id == user_id).all()
 
 @router.put(
     "/{project_id}", 

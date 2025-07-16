@@ -19,11 +19,11 @@
 
 ### POST /portfolios/
 - 포트폴리오 생성 (프로젝트 이미지, 대표 여부 등)
-- 요청: multipart/form-data
+- 요청: multipart/form-data (user_id 필수)
 - 응답: 생성된 포트폴리오 정보
 
-### GET /portfolios?resume_id=1
-- 특정 이력서의 포트폴리오 목록 조회
+### GET /portfolios?user_id=1
+- 특정 사용자의 포트폴리오 목록 조회
 - 응답: 포트폴리오 배열
 
 ### PATCH /portfolios/{portfolio_id}/representative
@@ -32,7 +32,7 @@
 
 ### PUT /portfolios/{portfolio_id}
 - 포트폴리오 정보 수정 (부분 업데이트 지원)
-- 요청: multipart/form-data
+- 요청: multipart/form-data (user_id 필수)
 - 응답: 업데이트된 포트폴리오 정보
 
 ### DELETE /portfolios/{portfolio_id}
@@ -44,17 +44,17 @@
 ## Project (프로젝트)
 
 ### POST /projects/
-- 프로젝트 생성 (포트폴리오에 연결)
-- 요청: multipart/form-data
+- 프로젝트 생성 (포트폴리오에 연결, user_id 필수)
+- 요청: multipart/form-data (portfolio_id, user_id 필수)
 - 응답: 생성된 프로젝트 정보
 
-### GET /projects?portfolio_id=1
-- 특정 포트폴리오의 프로젝트 목록 조회
+### GET /projects?user_id=1
+- 특정 사용자의 프로젝트 목록 조회
 - 응답: 프로젝트 배열
 
 ### PUT /projects/{project_id}
 - 프로젝트 정보 수정 (부분 업데이트 지원)
-- 요청: multipart/form-data
+- 요청: multipart/form-data (user_id 필수)
 - 응답: 업데이트된 프로젝트 정보
 
 ### DELETE /projects/{project_id}

@@ -30,7 +30,7 @@ def get_db():
     - 이력서와 연결된 포트폴리오 관리
     
     ### 요청 데이터 (multipart/form-data)
-    - `resume_id`: 연결할 이력서 ID (필수)
+    - `user_id`: 연결할 사용자 ID (필수)
     - `is_representative`: 대표 포트폴리오 여부 (기본값: false)
     - `image`: 프로젝트 이미지 파일 (선택사항)
     - `project_url`: 프로젝트 URL (선택사항)
@@ -44,7 +44,7 @@ def get_db():
     
     ### 응답 데이터
     - `id`: 포트폴리오 ID
-    - `resume_id`: 연결된 이력서 ID
+    - `user_id`: 연결된 사용자 ID
     - `is_representative`: 대표 포트폴리오 여부
     - `image`: 프로젝트 이미지 경로
     - `project_url`: 프로젝트 URL
@@ -66,7 +66,7 @@ def get_db():
                 "application/json": {
                     "example": {
                         "id": 1,
-                        "resume_id": 1,
+                        "user_id": 1,
                         "is_representative": True,
                         "image": "/media/profile/project1.jpg",
                         "project_url": "https://github.com/user/project",
@@ -93,7 +93,7 @@ def get_db():
     }
 )
 def create_portfolio(
-    resume_id: int = Form(..., description="연결할 이력서 ID"),
+    user_id: int = Form(..., description="연결할 사용자 ID"),
     is_representative: Optional[bool] = Form(False, description="대표 포트폴리오 여부"),
     image: Optional[UploadFile] = File(None, description="프로젝트 이미지 파일"),
     project_url: Optional[str] = Form(None, description="프로젝트 URL"),
@@ -115,10 +115,10 @@ def create_portfolio(
 
     # 대표 포트폴리오로 설정 시, 기존 대표 해제
     if is_representative:
-        db.query(Portfolio).filter(Portfolio.resume_id == resume_id).update({"is_representative": False})
+        db.query(Portfolio).filter(Portfolio.user_id == user_id).update({"is_representative": False})
 
     portfolio = Portfolio(
-        resume_id=resume_id,
+        user_id=user_id,
         is_representative=is_representative,
         image=image_path,
         project_url=project_url,
@@ -139,21 +139,21 @@ def create_portfolio(
     response_model=List[PortfolioResponse],
     summary="포트폴리오 목록 조회",
     description="""
-    ## 특정 이력서의 포트폴리오 목록을 조회합니다.
+    ## 특정 사용자의 포트폴리오 목록을 조회합니다.
     
     ### 기능 설명
     - 이력서 ID로 연결된 모든 포트폴리오 조회
     - 대표 포트폴리오 포함 전체 목록 반환
     
     ### 쿼리 파라미터
-    - `resume_id`: 조회할 이력서 ID (필수)
+    - `user_id`: 조회할 사용자 ID (필수)
     
     ### 응답 데이터
     - 포트폴리오 객체 배열
     
     ### 예시
     ```
-    GET /portfolios?resume_id=1
+    GET /portfolios?user_id=1
     ```
     """,
     responses={
@@ -164,7 +164,7 @@ def create_portfolio(
                     "example": [
                         {
                             "id": 1,
-                            "resume_id": 1,
+                            "user_id": 1,
                             "is_representative": True,
                             "project_name": "쇼핑몰 웹사이트",
                             "project_intro": "React와 Node.js를 활용한 풀스택 쇼핑몰",
@@ -173,7 +173,7 @@ def create_portfolio(
                         },
                         {
                             "id": 2,
-                            "resume_id": 1,
+                            "user_id": 1,
                             "is_representative": False,
                             "project_name": "포트폴리오 웹사이트",
                             "project_intro": "개인 포트폴리오 웹사이트",
@@ -187,13 +187,13 @@ def create_portfolio(
     }
 )
 def get_portfolios(
-    resume_id: int = Query(..., description="조회할 이력서 ID"), 
+    user_id: int = Query(..., description="조회할 사용자 ID"), 
     db: Session = Depends(get_db)
 ):
     """
     특정 이력서의 포트폴리오 목록을 조회합니다.
     """
-    return db.query(Portfolio).filter(Portfolio.resume_id == resume_id).all()
+    return db.query(Portfolio).filter(Portfolio.user_id == user_id).all()
 
 @router.patch(
     "/{portfolio_id}/representative", 
@@ -223,7 +223,7 @@ def get_portfolios(
                 "application/json": {
                     "example": {
                         "id": 1,
-                        "resume_id": 1,
+                        "user_id": 1,
                         "is_representative": True,
                         "project_name": "쇼핑몰 웹사이트",
                         "project_intro": "React와 Node.js를 활용한 풀스택 쇼핑몰",
@@ -258,7 +258,7 @@ def set_representative_portfolio(
     if not portfolio:
         raise HTTPException(status_code=404, detail="포트폴리오를 찾을 수 없습니다.")
     # 같은 이력서의 다른 포트폴리오 대표 해제
-    db.query(Portfolio).filter(Portfolio.resume_id == portfolio.resume_id).update({"is_representative": False})
+    db.query(Portfolio).filter(Portfolio.user_id == portfolio.user_id).update({"is_representative": False})
     portfolio.is_representative = True
     db.commit()
     db.refresh(portfolio)
@@ -354,7 +354,7 @@ def delete_portfolio(
                 "application/json": {
                     "example": {
                         "id": 1,
-                        "resume_id": 1,
+                        "user_id": 1,
                         "is_representative": True,
                         "image": "/media/profile/project1_updated.jpg",
                         "project_url": "https://github.com/user/project",
@@ -403,7 +403,7 @@ def update_portfolio(
     # 대표 포트폴리오로 설정 시, 기존 대표 해제
     if is_representative is not None:
         if is_representative:
-            db.query(Portfolio).filter(Portfolio.resume_id == portfolio.resume_id).update({"is_representative": False})
+            db.query(Portfolio).filter(Portfolio.user_id == portfolio.user_id).update({"is_representative": False})
         portfolio.is_representative = is_representative
 
     if image:

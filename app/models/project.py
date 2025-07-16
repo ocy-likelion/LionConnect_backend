@@ -15,6 +15,7 @@ class Project(Base):
     description = Column(String, nullable=False)
     role = Column(String, nullable=False)
     tech_stack = Column(String, nullable=False)
+    user_id = Column(Integer, nullable=False)  # 추가
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     github_url = Column(String, nullable=True)  # github url 
