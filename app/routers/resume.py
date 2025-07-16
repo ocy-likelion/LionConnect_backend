@@ -267,8 +267,9 @@ def get_resume_detail(
     resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.id == resume_id).first()
     if not resume:
         raise HTTPException(status_code=404, detail="이력서를 찾을 수 없습니다.")
-    portfolios = db.query(Portfolio).filter(Portfolio.resume_id == resume_id).all()
-    projects = db.query(Project).filter(Project.portfolio_id.in_([p.id for p in portfolios])).all()
+    user_id = resume.user_id
+    portfolios = db.query(Portfolio).filter(Portfolio.user_id == user_id).all()
+    projects = db.query(Project).filter(Project.user_id == user_id).all()
     awards = db.query(Award).filter(Award.resume_id == resume_id).all()
     educations = db.query(Education).filter(Education.resume_id == resume_id).all()
     # 모든 필드를 원본값 그대로 반환
