@@ -4,6 +4,7 @@ from app.models.award import Award
 from app.schemas.award import AwardCreate, AwardResponse
 from app.core.config import SessionLocal
 from typing import List
+from app.models.resume import ResumeBasicInfo
 
 router = APIRouter(prefix="/awards", tags=["Award"])
 
@@ -20,7 +21,7 @@ def get_db():
     summary="수상 및 활동 등록",
     description="""
     이력서에 수상 및 활동(자격증명 등)을 등록합니다.\n
-    - `resume_id`: 이력서 ID (필수)\n    - `name`: 수상/자격증명명 (필수)\n    - `date`: 취득일 (필수, 예: 2024-06)\n    - `organization`: 기관명 (필수)\n
+    - `user_id`: 사용자 ID (필수)\n    - `name`: 수상/자격증명명 (필수)\n    - `date`: 취득일 (필수, 예: 2024-06)\n    - `organization`: 기관명 (필수)\n
     **응답:** 등록된 수상/활동의 상세 정보 반환
     """,
     responses={
@@ -44,7 +45,16 @@ def get_db():
     }
 )
 def create_award(award: AwardCreate, db: Session = Depends(get_db)):
-    db_award = Award(**award.dict())
+    # user_id로 resume_id 자동 조회
+    resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.user_id == award.user_id).first()
+    if not resume:
+        raise HTTPException(status_code=400, detail="해당 사용자의 이력서가 존재하지 않습니다.")
+    db_award = Award(
+        resume_id=resume.id,
+        name=award.name,
+        date=award.date,
+        organization=award.organization
+    )
     db.add(db_award)
     db.commit()
     db.refresh(db_award)
