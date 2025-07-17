@@ -86,7 +86,6 @@ def get_db():
     }
 )
 def create_project(
-    portfolio_id: int = Form(..., description="연결할 포트폴리오 ID"),
     user_id: int = Form(..., description="연결할 사용자 ID"),
     project_name: str = Form(..., description="프로젝트명"),
     project_period: str = Form(..., description="프로젝트 기간"),
@@ -96,12 +95,11 @@ def create_project(
     tech_stack: str = Form(..., description="사용 기술 스택"),
     db: Session = Depends(get_db),
 ):
-    """
-    새로운 프로젝트를 생성합니다.
-    
-    포트폴리오에 연결된 개별 프로젝트의 상세 정보를 저장합니다.
-    프로젝트의 기술 스택과 역할 정보를 포함합니다.
-    """
+    # user_id로 포트폴리오 id 자동 조회
+    portfolio = db.query(Project.__bases__[0].__subclasses__()[0]).filter_by(user_id=user_id).first()
+    if not portfolio:
+        raise HTTPException(status_code=400, detail="해당 사용자의 포트폴리오가 존재하지 않습니다.")
+    portfolio_id = portfolio.id
     project = Project(
         portfolio_id=portfolio_id,
         user_id=user_id,
