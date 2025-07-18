@@ -5,6 +5,7 @@ from app.models.project import Project
 from app.core.config import SessionLocal
 from typing import List, Optional
 from datetime import datetime
+from app.models.portfolio import Portfolio
 
 router = APIRouter(prefix="/projects", tags=["Project"])
 
@@ -95,8 +96,8 @@ def create_project(
     tech_stack: str = Form(..., description="사용 기술 스택"),
     db: Session = Depends(get_db),
 ):
-    # user_id로 포트폴리오 id 자동 조회
-    portfolio = db.query(Project.__bases__[0].__subclasses__()[0]).filter_by(user_id=user_id).first()
+    # Portfolio 모델을 명시적으로 import해서 user_id로 조회
+    portfolio = db.query(Portfolio).filter_by(user_id=user_id).first()
     if not portfolio:
         raise HTTPException(status_code=400, detail="해당 사용자의 포트폴리오가 존재하지 않습니다.")
     portfolio_id = portfolio.id

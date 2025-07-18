@@ -13,7 +13,7 @@ class AwardResponse(BaseModel):
         orm_mode = True 
 
 class AwardCreate(BaseModel):
-    resume_id: int
+    user_id: int
     name: str
     date: str
     organization: str 
