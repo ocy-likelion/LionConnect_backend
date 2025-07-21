@@ -3,7 +3,7 @@ from typing import Optional
 from datetime import datetime
 
 class PortfolioBase(BaseModel):
-    resume_id: int
+    user_id: int
     is_representative: Optional[bool] = False
     project_url: Optional[str] = None
     project_name: str
