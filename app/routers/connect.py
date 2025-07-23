@@ -119,7 +119,7 @@ def create_connect_request(
         if not student_user:
             raise HTTPException(status_code=404, detail="수료생을 찾을 수 없습니다.")
         
-        # 수료생의 대표 포트폴리오 자동 찾기
+        # 수료생의 대표 포트폴리오 자동 찾기 (없어도 OK)
         portfolio = db.query(Portfolio).filter(
             Portfolio.user_id == req.user_id,
             Portfolio.is_representative == True
@@ -131,8 +131,8 @@ def create_connect_request(
                 Portfolio.user_id == req.user_id
             ).first()
         
-        if not portfolio:
-            raise HTTPException(status_code=404, detail="수료생의 포트폴리오를 찾을 수 없습니다.")
+        # 포트폴리오가 없어도 커넥트 요청은 가능 (portfolio_id는 null로 설정)
+        portfolio_id = portfolio.id if portfolio else None
         
         # 중복 요청 방지 (같은 기업담당자가 같은 수료생에게 보낸 요청)
         exists = db.query(ConnectRequest).filter(
@@ -146,7 +146,7 @@ def create_connect_request(
         connect = ConnectRequest(
             company_user_id=None,  # 로그인하지 않은 사용자
             user_id=req.user_id,
-            portfolio_id=portfolio.id,  # 자동으로 찾은 포트폴리오
+            portfolio_id=portfolio_id,  # 포트폴리오가 없으면 null
             company_representative_name=req.company_representative_name,
             company_representative_email=req.company_representative_email,
             company_representative_phone=req.company_representative_phone,
@@ -184,8 +184,8 @@ def create_connect_request(
 • 기술스택: {student_profile.tech_stack if student_profile else '미입력'}
 
 *포트폴리오 정보:*
-• 프로젝트명: {portfolio.project_name}
-• 프로젝트 소개: {portfolio.project_intro}
+• 프로젝트명: {portfolio.project_name if portfolio else '포트폴리오 없음'}
+• 프로젝트 소개: {portfolio.project_intro if portfolio else '포트폴리오 없음'}
 
 *채용 정보:*
 • 포지션: {req.position or '미입력'}
@@ -210,6 +210,8 @@ def create_connect_request(
         raise
     except Exception as e:
         db.rollback()
+        print(f"커넥트 요청 생성 중 오류 발생: {str(e)}")
+        print(f"요청 데이터: {req}")
         raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
 
 @router.get(
@@ -225,4 +227,24 @@ def get_connect_requests_by_student(
     requests = db.query(ConnectRequest).filter(
         ConnectRequest.user_id == user_id
     ).all()
-    return requests 
+    return requests
+
+@router.get(
+    "/users",
+    summary="🦁 커넥트 요청 가능한 사용자 목록",
+    description="커넥트 요청을 받을 수 있는 사용자 목록을 조회합니다."
+)
+def get_available_users(db: Session = Depends(get_db)):
+    """
+    커넥트 요청을 받을 수 있는 사용자 목록을 반환합니다.
+    """
+    users = db.query(User).all()
+    return [
+        {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "created_at": user.created_at
+        }
+        for user in users
+    ] 
