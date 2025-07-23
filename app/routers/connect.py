@@ -1,58 +1,61 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Form, Query
 from sqlalchemy.orm import Session
-from app.models.user import User, StudentProfile
-from app.models.portfolio import Portfolio
-from app.models.connect import ConnectRequest
-from app.schemas.connect import ConnectRequestCreate, ConnectRequestResponse
-from app.core.config import SessionLocal
-from app.utils.slack import send_slack_message
 from typing import List
+from app.core.config import get_db, SLACK_WEBHOOK_URL
+from app.models.connect import ConnectRequest
+from app.models.user import User
+from app.models.portfolio import Portfolio
+from app.models.student_profile import StudentProfile
+from app.schemas.connect import ConnectRequestCreate, ConnectRequestResponse
+from app.utils.slack import send_slack_message
 
-router = APIRouter(prefix="/connect", tags=["Connect"])
-
-SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/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"
+router = APIRouter(prefix="/connect", tags=["커넥트"])
 
 def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    from app.core.config import get_db
+    return get_db()
 
 @router.post(
     "/request",
     response_model=ConnectRequestResponse,
-    summary="커넥트 요청 생성",
+    status_code=201,
+    summary="🦁 커넥트 요청 생성 (개선된 버전)",
     description="""
-    기업담당자가 수료생에게 커넥트 요청을 보냅니다.
+    ## 기업담당자가 수료생에게 커넥트 요청을 보냅니다.
     
-    **필수 정보:**
-    - `company_representative_name`: 기업담당자 이름
-    - `company_representative_email`: 기업담당자 이메일
-    - `company_representative_phone`: 기업담당자 전화번호
-    - `student_user_id`: 수료생 사용자 ID
-    - `portfolio_id`: 포트폴리오 ID
+    ### 📋 필수 정보
+    - **user_id**: 수료생 사용자 ID
+    - **company_representative_name**: 기업담당자 이름
+    - **company_representative_email**: 기업담당자 이메일
+    - **company_representative_phone**: 기업담당자 전화번호
     
-    **선택 정보:**
-    - `company_name`: 기업명
-    - `message`: 커넥트 요청 메시지
-    - `position`: 채용 포지션
-    - `job_description`: 직무 설명
-    - `required_stack`: 필수 기술 스택
-    - `career_level`: 희망 경력 수준
-    - `employment_type`: 고용 형태
+    ### 🔄 자동 처리
+    - **portfolio_id**: 수료생의 대표 포트폴리오를 자동으로 찾아서 설정
+    - **company_user_id**: 로그인하지 않은 사용자는 null로 설정
     
-    **응답:** 생성된 커넥트 요청의 상세 정보와 Slack 알림 전송
+    ### 📝 선택 정보
+    - **company_name**: 기업명
+    - **message**: 커넥트 요청 메시지
+    - **position**: 채용 포지션
+    - **job_description**: 직무 설명
+    - **required_stack**: 필수 기술 스택
+    - **career_level**: 희망 경력 수준
+    - **employment_type**: 고용 형태
+    
+    ### 📈 개선사항
+    - 로그인 없이도 사용 가능
+    - portfolio_id 자동 설정
+    - 더 간단한 API 사용법
     """,
     responses={
         201: {
-            "description": "커넥트 요청 생성 성공",
+            "description": "✅ 커넥트 요청 생성 성공",
             "content": {
                 "application/json": {
                     "example": {
                         "id": 1,
-                        "company_user_id": 10,
-                        "student_user_id": 1,
+                        "company_user_id": None,
+                        "user_id": 1,
                         "portfolio_id": 1,
                         "company_representative_name": "김기업",
                         "company_representative_email": "kim@company.com",
@@ -70,26 +73,30 @@ def get_db():
             }
         },
         400: {
-            "description": "잘못된 데이터 또는 중복 요청",
+            "description": "❌ 잘못된 데이터 또는 중복 요청",
             "content": {
                 "application/json": {
-                    "example": {
-                        "detail": "이미 커넥트 요청이 존재합니다."
+                    "examples": {
+                        "duplicate_request": {
+                            "summary": "중복 요청",
+                            "value": {"detail": "이미 커넥트 요청이 존재합니다."}
+                        },
+                        "missing_fields": {
+                            "summary": "필수 필드 누락",
+                            "value": {"detail": "기업담당자 기본 정보가 누락되었습니다."}
+                        }
                     }
                 }
             }
         },
         404: {
-            "description": "사용자 또는 포트폴리오를 찾을 수 없음",
+            "description": "❌ 수료생을 찾을 수 없음",
             "content": {
                 "application/json": {
-                    "example": {
-                        "detail": "수료생을 찾을 수 없습니다."
-                    }
+                    "example": {"detail": "수료생을 찾을 수 없습니다."}
                 }
             }
-        },
-        500: {"description": "서버 오류"}
+        }
     }
 )
 def create_connect_request(
@@ -97,43 +104,54 @@ def create_connect_request(
     db: Session = Depends(get_db),
 ):
     """
-    기업담당자가 수료생에게 커넥트 요청을 보냅니다.
+    ## 커넥트 요청 생성 (개선된 버전)
     
-    기업담당자의 기본 정보와 함께 커넥트 요청을 생성하며,
-    중복 요청을 방지하고 Slack 알림을 통해 실시간으로 알림을 전송합니다.
+    ### 주요 변경사항:
+    - user_id만 입력받음
+    - portfolio_id 자동 설정
+    - company_user_id는 로그인하지 않은 사용자는 null
     """
     try:
         # 입력 데이터 검증
         if not req.company_representative_name or not req.company_representative_email or not req.company_representative_phone:
             raise HTTPException(status_code=400, detail="기업담당자 기본 정보가 누락되었습니다.")
         
-        if not req.student_user_id or not req.portfolio_id:
+        if not req.user_id:
             raise HTTPException(status_code=400, detail="수료생 정보가 누락되었습니다.")
         
-        # 포트폴리오 존재 여부 확인
-        portfolio = db.query(Portfolio).filter(Portfolio.id == req.portfolio_id).first()
-        if not portfolio:
-            raise HTTPException(status_code=404, detail="포트폴리오를 찾을 수 없습니다.")
-        
         # 수료생 존재 여부 확인
-        student_user = db.query(User).filter(User.id == req.student_user_id).first()
+        student_user = db.query(User).filter(User.id == req.user_id).first()
         if not student_user:
             raise HTTPException(status_code=404, detail="수료생을 찾을 수 없습니다.")
+        
+        # 수료생의 대표 포트폴리오 자동 찾기
+        portfolio = db.query(Portfolio).filter(
+            Portfolio.user_id == req.user_id,
+            Portfolio.is_representative == True
+        ).first()
+        
+        # 대표 포트폴리오가 없으면 첫 번째 포트폴리오 사용
+        if not portfolio:
+            portfolio = db.query(Portfolio).filter(
+                Portfolio.user_id == req.user_id
+            ).first()
+        
+        if not portfolio:
+            raise HTTPException(status_code=404, detail="수료생의 포트폴리오를 찾을 수 없습니다.")
         
         # 중복 요청 방지 (같은 기업담당자가 같은 수료생에게 보낸 요청)
         exists = db.query(ConnectRequest).filter(
             ConnectRequest.company_representative_email == req.company_representative_email,
-            ConnectRequest.student_user_id == req.student_user_id,
-            ConnectRequest.portfolio_id == req.portfolio_id
+            ConnectRequest.user_id == req.user_id
         ).first()
         if exists:
             raise HTTPException(status_code=400, detail="이미 커넥트 요청이 존재합니다.")
         
-        # 커넥트 요청 생성
+        # 커넥트 요청 생성 (company_user_id는 null, portfolio_id는 자동 설정)
         connect = ConnectRequest(
-            company_user_id=req.company_user_id,
-            student_user_id=req.student_user_id,
-            portfolio_id=req.portfolio_id,
+            company_user_id=None,  # 로그인하지 않은 사용자
+            user_id=req.user_id,
+            portfolio_id=portfolio.id,  # 자동으로 찾은 포트폴리오
             company_representative_name=req.company_representative_name,
             company_representative_email=req.company_representative_email,
             company_representative_phone=req.company_representative_phone,
@@ -153,7 +171,7 @@ def create_connect_request(
         if SLACK_WEBHOOK_URL:
             try:
                 # 수료생 정보 조회
-                student_profile = db.query(StudentProfile).filter(StudentProfile.user_id == req.student_user_id).first()
+                student_profile = db.query(StudentProfile).filter(StudentProfile.user_id == req.user_id).first()
                 
                 slack_message = f"""
 🦁 *새로운 커넥트 요청이 도착했습니다!*
@@ -189,7 +207,6 @@ def create_connect_request(
 """
                 send_slack_message(SLACK_WEBHOOK_URL, slack_message)
             except Exception as e:
-                # Slack 알림 실패는 로그만 남기고 전체 요청은 성공으로 처리
                 print(f"Slack 알림 전송 실패 (요청은 성공): {str(e)}")
         
         return connect
@@ -198,22 +215,19 @@ def create_connect_request(
         raise
     except Exception as e:
         db.rollback()
-        print(f"커넥트 요청 생성 중 오류: {str(e)}")
-        raise HTTPException(status_code=500, detail="커넥트 요청 생성 중 오류가 발생했습니다.")
+        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
 
 @router.get(
-    "/requests/{student_user_id}",
+    "/requests/{user_id}",
     response_model=List[ConnectRequestResponse],
     summary="수료생의 커넥트 요청 목록 조회",
     description="특정 수료생이 받은 모든 커넥트 요청을 조회합니다."
 )
 def get_connect_requests_by_student(
-    student_user_id: int,
+    user_id: int,
     db: Session = Depends(get_db),
 ):
-    """특정 수료생이 받은 모든 커넥트 요청을 조회합니다."""
     requests = db.query(ConnectRequest).filter(
-        ConnectRequest.student_user_id == student_user_id
-    ).order_by(ConnectRequest.created_at.desc()).all()
-    
+        ConnectRequest.user_id == user_id
+    ).all()
     return requests 
