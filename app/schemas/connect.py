@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import datetime
 
@@ -15,8 +15,8 @@ class ConnectRequestCreate(BaseModel):
     career_level: Optional[str] = Field(None, description="희망 경력 수준")
     employment_type: Optional[str] = Field(None, description="고용 형태")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "user_id": 1,
                 "company_representative_name": "김기업",
@@ -31,6 +31,7 @@ class ConnectRequestCreate(BaseModel):
                 "employment_type": "정규직"
             }
         }
+    )
 
 class ConnectRequestResponse(BaseModel):
     id: int
@@ -49,8 +50,9 @@ class ConnectRequestResponse(BaseModel):
     employment_type: Optional[str]
     created_at: datetime
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "company_user_id": None,
@@ -68,4 +70,5 @@ class ConnectRequestResponse(BaseModel):
                 "employment_type": "정규직",
                 "created_at": "2024-07-01T12:00:00"
             }
-        } 
+        }
+    ) 

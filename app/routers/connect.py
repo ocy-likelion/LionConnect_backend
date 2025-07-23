@@ -11,10 +11,6 @@ from app.utils.slack import send_slack_message
 
 router = APIRouter(prefix="/connect", tags=["커넥트"])
 
-def get_db():
-    from app.core.config import get_db
-    return get_db()
-
 @router.post(
     "/request",
     response_model=ConnectRequestResponse,
