@@ -3,9 +3,8 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.core.config import get_db, SLACK_WEBHOOK_URL
 from app.models.connect import ConnectRequest
-from app.models.user import User
+from app.models.user import User, StudentProfile
 from app.models.portfolio import Portfolio
-from app.models.student_profile import StudentProfile
 from app.schemas.connect import ConnectRequestCreate, ConnectRequestResponse
 from app.utils.slack import send_slack_message
 
