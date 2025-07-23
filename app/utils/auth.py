@@ -2,7 +2,10 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
 from app.core.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Depends, Request
+from sqlalchemy.orm import Session
+from app.models.user import User
+from app.core.config import get_db
 from typing import Optional
 
 # 비밀번호 해시용
@@ -41,4 +44,23 @@ def get_current_user_id(token: str) -> Optional[int]:
     user_id = payload.get("sub")
     if user_id is None:
         return None
-    return int(user_id) 
+    return int(user_id)
+
+def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
+    """
+    현재 인증된 사용자를 반환합니다.
+    """
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="인증 토큰이 필요합니다.")
+    token = auth_header.split(" ")[1]
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="토큰에 사용자 정보가 없습니다.")
+    user = db.query(User).filter(User.id == int(user_id)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+    return user 

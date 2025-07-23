@@ -2,8 +2,10 @@ from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, P
 from sqlalchemy.orm import Session
 from app.schemas.resume import ResumeBasicInfoResponse
 from app.models.resume import ResumeBasicInfo
-from app.core.config import SessionLocal
+from app.models.user import User
+from app.core.config import SessionLocal, get_db
 from app.utils.file import save_profile_image
+from app.utils.auth import get_current_user
 from typing import Optional
 from datetime import datetime
 from app.models.portfolio import Portfolio
@@ -125,7 +127,7 @@ def create_resume_basic_info(
     short_intro: str = Form(..., description="간단 소개"),
     intro: str = Form(..., description="상세 소개"),
     db: Session = Depends(get_db),
-    # user_id: int = Depends(get_current_user) # 실제 서비스에서는 인증 필요
+    current_user: User = Depends(get_current_user)
 ):
     """
     이력서의 기본 정보를 생성합니다.
@@ -133,8 +135,7 @@ def create_resume_basic_info(
     사용자의 개인정보, 학력, 소개 등을 포함한 이력서의 기본 정보를 저장합니다.
     프로필 이미지 업로드도 지원합니다.
     """
-    # 임시 user_id (실제 서비스에서는 인증에서 받아옴)
-    user_id = 1
+    user_id = current_user.id
 
     # 이메일 중복 체크 (회원 테이블과 연동 필요)
     # if db.query(User).filter(User.email == email).first():
@@ -166,16 +167,16 @@ def create_resume_basic_info(
     return resume
 
 @router.get(
-    "/{resume_id}/detail",
-    summary="이력서 상세 정보 전체 조회",
+    "/user/{user_id}/detail",
+    summary="사용자 이력서 상세 정보 전체 조회",
     description="""
-    특정 이력서의 모든 정보를 상세하게 조회합니다.\n
+    특정 사용자의 이력서 모든 정보를 상세하게 조회합니다.\n
     - 이력서 기본 정보, 포트폴리오, 프로젝트, 수상 및 활동, 교육 이력 등\n    - 모든 데이터는 DB에 저장된 원본값 그대로(가공 없이) 반환됩니다.\n
     **응답:**\n    - `resume`: 이력서 기본 정보 객체\n    - `portfolios`: 포트폴리오 객체 리스트\n    - `projects`: 프로젝트 객체 리스트\n    - `awards`: 수상 및 활동 객체 리스트\n    - `educations`: 교육 이력 객체 리스트
     """,
     responses={
         200: {
-            "description": "이력서 상세 정보 전체 조회 성공",
+            "description": "사용자 이력서 상세 정보 전체 조회 성공",
             "content": {
                 "application/json": {
                     "example": {
@@ -244,34 +245,35 @@ def create_resume_basic_info(
             }
         },
         404: {
-            "description": "이력서를 찾을 수 없음",
+            "description": "사용자의 이력서를 찾을 수 없음",
             "content": {
                 "application/json": {
                     "example": {
-                        "detail": "이력서를 찾을 수 없습니다."
+                        "detail": "사용자의 이력서를 찾을 수 없습니다."
                     }
                 }
             }
         }
     }
 )
-def get_resume_detail(
-    resume_id: int = Path(..., description="조회할 이력서의 ID"), 
+def get_user_resume_detail(
+    user_id: int = Path(..., description="조회할 사용자의 ID"), 
     db: Session = Depends(get_db)
 ):
     """
-    특정 이력서의 모든 상세 정보를 조회합니다.
+    특정 사용자의 이력서 모든 상세 정보를 조회합니다.
     이력서 기본 정보와 함께 관련된 포트폴리오, 프로젝트, 수상 내역, 교육 내역을 모두 포함하여,
     DB에 저장된 원본값 그대로(가공 없이) 반환합니다.
     """
-    resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.id == resume_id).first()
+    resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.user_id == user_id).first()
     if not resume:
-        raise HTTPException(status_code=404, detail="이력서를 찾을 수 없습니다.")
-    user_id = resume.user_id
+        raise HTTPException(status_code=404, detail="사용자의 이력서를 찾을 수 없습니다.")
+    
     portfolios = db.query(Portfolio).filter(Portfolio.user_id == user_id).all()
     projects = db.query(Project).filter(Project.user_id == user_id).all()
-    awards = db.query(Award).filter(Award.resume_id == resume_id).all()
-    educations = db.query(Education).filter(Education.resume_id == resume_id).all()
+    awards = db.query(Award).filter(Award.resume_id == resume.id).all()
+    educations = db.query(Education).filter(Education.resume_id == resume.id).all()
+    
     # 모든 필드를 원본값 그대로 반환
     return {
         "resume": resume,
