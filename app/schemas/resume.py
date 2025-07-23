@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, constr
+from pydantic import BaseModel, EmailStr, constr, ConfigDict
 from typing import Optional
 from datetime import datetime
 
@@ -20,10 +20,8 @@ class ResumeBasicInfoCreate(ResumeBasicInfoBase):
 
 class ResumeBasicInfoResponse(ResumeBasicInfoBase):
     id: int
-    user_id: int
     profile_image: Optional[str]
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        orm_mode = True 
+    model_config = ConfigDict(from_attributes=True) 

@@ -38,7 +38,6 @@ def get_db():
     - 이력서 작성의 첫 단계
     
     ### 요청 데이터 (multipart/form-data)
-    - `user_id`: 사용자 ID (필수)
     - `profile_image`: 프로필 이미지 파일 (선택사항)
     - `name`: 이름 (필수)
     - `email`: 이메일 주소 (필수)
@@ -55,8 +54,7 @@ def get_db():
     - 이미지: JPG, PNG, GIF (최대 5MB)
     
     ### 응답 데이터
-    - `id`: 이력서 ID
-    - `user_id`: 사용자 ID
+    - `id`: 이력서 ID (자동 생성)
     - `profile_image`: 프로필 이미지 경로
     - `name`: 이름
     - `email`: 이메일
@@ -82,7 +80,6 @@ def get_db():
                 "application/json": {
                     "example": {
                         "id": 1,
-                        "user_id": 1,
                         "profile_image": "/media/profile/user1.jpg",
                         "name": "홍길동",
                         "email": "hong@example.com",
@@ -113,7 +110,6 @@ def get_db():
     }
 )
 def create_resume_basic_info(
-    user_id: int = Form(..., description="사용자 ID"),
     profile_image: Optional[UploadFile] = File(
         None, 
         description="프로필 이미지 파일 (JPG, PNG, GIF, 최대 5MB)"
@@ -145,7 +141,6 @@ def create_resume_basic_info(
         image_path = save_profile_image(profile_image)
 
     resume = ResumeBasicInfo(
-        user_id=user_id,
         profile_image=image_path,
         name=name,
         email=email,
@@ -181,7 +176,6 @@ def create_resume_basic_info(
                     "example": {
                         "resume": {
                             "id": 1,
-                            "user_id": 1,
                             "profile_image": "/media/profile/user1.jpg",
                             "name": "홍길동",
                             "email": "hong@example.com",
@@ -264,7 +258,7 @@ def get_user_resume_detail(
     이력서 기본 정보와 함께 관련된 포트폴리오, 프로젝트, 수상 내역, 교육 내역을 모두 포함하여,
     DB에 저장된 원본값 그대로(가공 없이) 반환합니다.
     """
-    resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.user_id == user_id).first()
+    resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.id == user_id).first()
     if not resume:
         raise HTTPException(status_code=404, detail="사용자의 이력서를 찾을 수 없습니다.")
     

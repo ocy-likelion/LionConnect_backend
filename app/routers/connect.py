@@ -117,7 +117,7 @@ def create_connect_request(
             raise HTTPException(status_code=400, detail="수료생 정보가 누락되었습니다.")
         
         # 수료생 존재 여부 확인 (resume_basic_info 테이블에서)
-        student_resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.user_id == req.user_id).first()
+        student_resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.id == req.user_id).first()
         if not student_resume:
             raise HTTPException(status_code=404, detail="수료생의 이력서를 찾을 수 없습니다.")
         
@@ -168,7 +168,7 @@ def create_connect_request(
         if SLACK_WEBHOOK_URL:
             try:
                 # 수료생 정보 조회 (resume_basic_info에서)
-                student_resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.user_id == req.user_id).first()
+                student_resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.id == req.user_id).first()
                 
                 slack_message = f"""
 🦁 *새로운 커넥트 요청이 도착했습니다!*
@@ -246,7 +246,7 @@ def get_available_users(db: Session = Depends(get_db)):
     resumes = db.query(ResumeBasicInfo).all()
     return [
         {
-            "id": resume.user_id,
+            "id": resume.id,
             "name": resume.name,
             "email": resume.email,
             "phone": resume.phone,

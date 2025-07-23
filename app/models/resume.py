@@ -8,7 +8,6 @@ class ResumeBasicInfo(Base):
     __tablename__ = "resume_basic_info"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False)
     profile_image = Column(String, nullable=True)
     name = Column(String, nullable=False)
     email = Column(String, nullable=False)
