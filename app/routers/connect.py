@@ -5,6 +5,7 @@ from app.core.config import get_db, SLACK_WEBHOOK_URL
 from app.models.connect import ConnectRequest
 from app.models.user import User, StudentProfile
 from app.models.portfolio import Portfolio
+from app.models.resume import ResumeBasicInfo
 from app.schemas.connect import ConnectRequestCreate, ConnectRequestResponse
 from app.utils.slack import send_slack_message
 
@@ -88,7 +89,7 @@ router = APIRouter(prefix="/connect", tags=["커넥트"])
             "description": "❌ 수료생을 찾을 수 없음",
             "content": {
                 "application/json": {
-                    "example": {"detail": "수료생을 찾을 수 없습니다."}
+                    "example": {"detail": "수료생의 이력서를 찾을 수 없습니다."}
                 }
             }
         }
@@ -105,6 +106,7 @@ def create_connect_request(
     - user_id만 입력받음
     - portfolio_id 자동 설정
     - company_user_id는 로그인하지 않은 사용자는 null
+    - resume_basic_info 테이블에서 수료생 정보 조회
     """
     try:
         # 입력 데이터 검증
@@ -114,10 +116,10 @@ def create_connect_request(
         if not req.user_id:
             raise HTTPException(status_code=400, detail="수료생 정보가 누락되었습니다.")
         
-        # 수료생 존재 여부 확인
-        student_user = db.query(User).filter(User.id == req.user_id).first()
-        if not student_user:
-            raise HTTPException(status_code=404, detail="수료생을 찾을 수 없습니다.")
+        # 수료생 존재 여부 확인 (resume_basic_info 테이블에서)
+        student_resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.user_id == req.user_id).first()
+        if not student_resume:
+            raise HTTPException(status_code=404, detail="수료생의 이력서를 찾을 수 없습니다.")
         
         # 수료생의 대표 포트폴리오 자동 찾기 (없어도 OK)
         portfolio = db.query(Portfolio).filter(
@@ -165,8 +167,8 @@ def create_connect_request(
         # Slack 알림 전송
         if SLACK_WEBHOOK_URL:
             try:
-                # 수료생 정보 조회
-                student_profile = db.query(StudentProfile).filter(StudentProfile.user_id == req.user_id).first()
+                # 수료생 정보 조회 (resume_basic_info에서)
+                student_resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.user_id == req.user_id).first()
                 
                 slack_message = f"""
 🦁 *새로운 커넥트 요청이 도착했습니다!*
@@ -178,10 +180,12 @@ def create_connect_request(
 • 기업명: {req.company_name or '미입력'}
 
 *수료생 정보:*
-• 이름: {student_user.name or '미입력'}
-• 이메일: {student_user.email}
-• 과정명: {student_profile.course_name if student_profile else '미입력'}
-• 기술스택: {student_profile.tech_stack if student_profile else '미입력'}
+• 이름: {student_resume.name if student_resume else '미입력'}
+• 이메일: {student_resume.email if student_resume else '미입력'}
+• 전화번호: {student_resume.phone if student_resume else '미입력'}
+• 희망 직무: {student_resume.job_type if student_resume else '미입력'}
+• 학교: {student_resume.school if student_resume else '미입력'}
+• 전공: {student_resume.major if student_resume else '미입력'}
 
 *포트폴리오 정보:*
 • 프로젝트명: {portfolio.project_name if portfolio else '포트폴리오 없음'}
@@ -238,13 +242,18 @@ def get_available_users(db: Session = Depends(get_db)):
     """
     커넥트 요청을 받을 수 있는 사용자 목록을 반환합니다.
     """
-    users = db.query(User).all()
+    # resume_basic_info 테이블에서 수료생 정보 조회
+    resumes = db.query(ResumeBasicInfo).all()
     return [
         {
-            "id": user.id,
-            "name": user.name,
-            "email": user.email,
-            "created_at": user.created_at
+            "id": resume.user_id,
+            "name": resume.name,
+            "email": resume.email,
+            "phone": resume.phone,
+            "job_type": resume.job_type,
+            "school": resume.school,
+            "major": resume.major,
+            "created_at": resume.created_at
         }
-        for user in users
+        for resume in resumes
     ] 

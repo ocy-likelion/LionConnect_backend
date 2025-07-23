@@ -38,6 +38,7 @@ def get_db():
     - 이력서 작성의 첫 단계
     
     ### 요청 데이터 (multipart/form-data)
+    - `user_id`: 사용자 ID (필수)
     - `profile_image`: 프로필 이미지 파일 (선택사항)
     - `name`: 이름 (필수)
     - `email`: 이메일 주소 (필수)
@@ -112,6 +113,7 @@ def get_db():
     }
 )
 def create_resume_basic_info(
+    user_id: int = Form(..., description="사용자 ID"),
     profile_image: Optional[UploadFile] = File(
         None, 
         description="프로필 이미지 파일 (JPG, PNG, GIF, 최대 5MB)"
@@ -126,8 +128,7 @@ def create_resume_basic_info(
     period: str = Form(..., description="재학 기간"),
     short_intro: str = Form(..., description="간단 소개"),
     intro: str = Form(..., description="상세 소개"),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     """
     이력서의 기본 정보를 생성합니다.
@@ -135,8 +136,6 @@ def create_resume_basic_info(
     사용자의 개인정보, 학력, 소개 등을 포함한 이력서의 기본 정보를 저장합니다.
     프로필 이미지 업로드도 지원합니다.
     """
-    user_id = current_user.id
-
     # 이메일 중복 체크 (회원 테이블과 연동 필요)
     # if db.query(User).filter(User.email == email).first():
     #     raise HTTPException(status_code=400, detail="이미 사용 중인 이메일입니다.")
