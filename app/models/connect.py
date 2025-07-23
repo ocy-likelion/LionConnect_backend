@@ -10,6 +10,11 @@ class ConnectRequest(Base):
     company_user_id = Column(Integer, nullable=False)  # 기업담당자 user_id
     student_user_id = Column(Integer, nullable=False)  # 수료생 user_id
     portfolio_id = Column(Integer, nullable=False)
+    # 기업담당자 기본 정보 추가
+    company_representative_name = Column(String(100), nullable=False)  # 기업담당자 이름
+    company_representative_email = Column(String(100), nullable=False)  # 기업담당자 이메일
+    company_representative_phone = Column(String(20), nullable=False)  # 기업담당자 전화번호
+    company_name = Column(String(100), nullable=True)  # 기업명
     message = Column(Text, nullable=True)
     position = Column(String, nullable=True)  # 채용 포지션
     job_description = Column(String, nullable=True)  # 직무 설명

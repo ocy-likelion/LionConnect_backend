@@ -4,13 +4,11 @@ from app.models.user import User, StudentProfile
 from app.models.portfolio import Portfolio
 from app.models.connect import ConnectRequest
 from app.schemas.connect import ConnectRequestCreate, ConnectRequestResponse
-from app.core.config import SessionLocal
+from app.core.config import SessionLocal, SLACK_WEBHOOK_URL
 from app.utils.slack import send_slack_message
 from typing import List, Optional
 
 router = APIRouter(prefix="/talents", tags=["Talent"])
-
-SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/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"
 
 def get_db():
     db = SessionLocal()

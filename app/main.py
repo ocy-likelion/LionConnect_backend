@@ -7,6 +7,7 @@ from app.routers import resume, portfolio, project, auth, talent
 import os
 from app.routers.award import router as award_router
 from app.routers.education import router as education_router
+from app.routers.connect import router as connect_router
 
 app = FastAPI(
     title="🦁 LionConnect API",
@@ -18,6 +19,7 @@ app = FastAPI(
     - 👨‍🎓 **학생 프로필**: 이력서, 포트폴리오 관리
     - 🏢 **기업 프로필**: 채용 정보, 기업 소개
     - 🤝 **매칭 시스템**: 학생과 기업 연결
+    - 🔗 **커넥트 요청**: 기업담당자의 수료생 연결 요청
     
     ### 인증 방식
     - JWT Bearer Token 사용
@@ -69,6 +71,10 @@ app = FastAPI(
         {
             "name": "Talent",
             "description": "인재 매칭 API - 기업의 인재 검색 및 연결"
+        },
+        {
+            "name": "Connect",
+            "description": "커넥트 요청 API - 기업담당자의 수료생 연결 요청"
         }
     ]
 )
@@ -89,8 +95,7 @@ app.add_middleware(
 # 정적 파일 제공 (업로드된 이미지 등)
 app.mount("/media", StaticFiles(directory="app/media"), name="media")
 
-# OAuth 미들웨어는 사용하지 않음 (app.add_middleware(oauth) 삭제)
-
+# 라우터 등록
 app.include_router(resume.router)
 app.include_router(portfolio.router)
 app.include_router(project.router)
@@ -98,6 +103,7 @@ app.include_router(auth.router)
 app.include_router(talent.router)
 app.include_router(award_router)
 app.include_router(education_router)
+app.include_router(connect_router)
 
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
 
@@ -112,6 +118,10 @@ def portfolio_form(request: Request):
 @app.get("/project-form", response_class=HTMLResponse)
 def project_form(request: Request):
     return templates.TemplateResponse("project_form.html", {"request": request})
+
+@app.get("/connect-request", response_class=HTMLResponse)
+def connect_request_form(request: Request):
+    return templates.TemplateResponse("connect_request.html", {"request": request})
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):

@@ -32,4 +32,5 @@ OAUTH_REDIRECT_URL = config('OAUTH_REDIRECT_URL', default='http://localhost:8000
 # JWT 설정
 SECRET_KEY = config('SECRET_KEY', default='lionconnect_secret_key_change_in_production')
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 #  Sack 웹훅 설정
+SLACK_WEBHOOK_URL = config('SLACK_WEBHOOK_URL', default='https://hooks.slack.com/services/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')
