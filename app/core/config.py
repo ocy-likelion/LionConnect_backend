@@ -18,7 +18,15 @@ if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
         SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
     )
 else:
-    engine = create_engine(SQLALCHEMY_DATABASE_URL)
+    # PostgreSQL 연결 최적화
+    engine = create_engine(
+        SQLALCHEMY_DATABASE_URL,
+        pool_pre_ping=True,  # 연결 상태 확인
+        pool_recycle=300,    # 5분마다 연결 재생성
+        pool_size=10,        # 연결 풀 크기
+        max_overflow=20,     # 최대 오버플로우
+        echo=False           # SQL 로그 비활성화 (배포 시 성능 향상)
+    )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -35,12 +43,11 @@ GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID', default='dummy_google_client_id')
 GOOGLE_CLIENT_SECRET = config('GOOGLE_CLIENT_SECRET', default='dummy_google_client_secret')
 KAKAO_CLIENT_ID = config('KAKAO_CLIENT_ID', default='dummy_kakao_client_id')
 KAKAO_CLIENT_SECRET = config('KAKAO_CLIENT_SECRET', default='dummy_kakao_client_secret')
-OAUTH_REDIRECT_URL = config('OAUTH_REDIRECT_URL', default='http://localhost:8000/auth/callback')
 
 # JWT 설정
-SECRET_KEY = config('SECRET_KEY', default='lionconnect_secret_key_change_in_production')
+SECRET_KEY = config('SECRET_KEY', default='your-secret-key-here')
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# Slack 웹훅 설정
-SLACK_WEBHOOK_URL = config('SLACK_WEBHOOK_URL', default='https://hooks.slack.com/services/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')
+# Slack 웹훅 URL
+SLACK_WEBHOOK_URL = config('SLACK_WEBHOOK_URL', default=None)

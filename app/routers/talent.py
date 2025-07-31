@@ -138,11 +138,11 @@ def list_talents(
             }
         },
         400: {
-            "description": "중복 요청 또는 잘못된 데이터",
+            "description": "잘못된 데이터",
             "content": {
                 "application/json": {
                     "example": {
-                        "detail": "이미 커넥트 요청이 존재합니다."
+                        "detail": "기업담당자 기본 정보가 누락되었습니다."
                     }
                 }
             }
@@ -166,7 +166,7 @@ def create_connect_request(
     특정 인재(수료생)에게 연결 요청을 보냅니다.
     
     기업이 관심 있는 인재에게 연결 요청을 보내며,
-    중복 요청을 방지하고 Slack 알림을 통해 실시간으로 알림을 전송합니다.
+    같은 수료생에게 여러 번 요청할 수 있고 Slack 알림을 통해 실시간으로 알림을 전송합니다.
     """
     try:
         # 입력 데이터 검증
@@ -197,13 +197,7 @@ def create_connect_request(
         # 포트폴리오가 없어도 커넥트 요청은 가능 (portfolio_id는 null로 설정)
         portfolio_id = portfolio.id if portfolio else None
         
-        # 중복 요청 방지 (같은 기업담당자가 같은 수료생에게 보낸 요청)
-        exists = db.query(ConnectRequest).filter(
-            ConnectRequest.company_representative_email == req.company_representative_email,
-            ConnectRequest.user_id == req.user_id
-        ).first()
-        if exists:
-            raise HTTPException(status_code=400, detail="이미 커넥트 요청이 존재합니다.")
+        # 중복 요청 방지 로직 제거 - 같은 수료생에게 여러 번 요청 가능
         
         # 커넥트 요청 생성 (company_user_id는 null, portfolio_id는 자동 설정)
         connect = ConnectRequest(

@@ -42,6 +42,7 @@ router = APIRouter(prefix="/connect", tags=["커넥트"])
     - 로그인 없이도 사용 가능
     - portfolio_id 자동 설정
     - 더 간단한 API 사용법
+    - 같은 수료생에게 여러 번 요청 가능
     """,
     responses={
         201: {
@@ -69,19 +70,10 @@ router = APIRouter(prefix="/connect", tags=["커넥트"])
             }
         },
         400: {
-            "description": "❌ 잘못된 데이터 또는 중복 요청",
+            "description": "❌ 잘못된 데이터",
             "content": {
                 "application/json": {
-                    "examples": {
-                        "duplicate_request": {
-                            "summary": "중복 요청",
-                            "value": {"detail": "이미 커넥트 요청이 존재합니다."}
-                        },
-                        "missing_fields": {
-                            "summary": "필수 필드 누락",
-                            "value": {"detail": "기업담당자 기본 정보가 누락되었습니다."}
-                        }
-                    }
+                    "example": {"detail": "기업담당자 기본 정보가 누락되었습니다."}
                 }
             }
         },
@@ -136,13 +128,7 @@ def create_connect_request(
         # 포트폴리오가 없어도 커넥트 요청은 가능 (portfolio_id는 null로 설정)
         portfolio_id = portfolio.id if portfolio else None
         
-        # 중복 요청 방지 (같은 기업담당자가 같은 수료생에게 보낸 요청)
-        exists = db.query(ConnectRequest).filter(
-            ConnectRequest.company_representative_email == req.company_representative_email,
-            ConnectRequest.user_id == req.user_id
-        ).first()
-        if exists:
-            raise HTTPException(status_code=400, detail="이미 커넥트 요청이 존재합니다.")
+        # 중복 요청 방지 로직 제거 - 같은 수료생에게 여러 번 요청 가능
         
         # 커넥트 요청 생성 (company_user_id는 null, portfolio_id는 자동 설정)
         connect = ConnectRequest(

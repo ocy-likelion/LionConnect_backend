@@ -3,11 +3,13 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.routers import resume, portfolio, project, auth, talent
 import os
-from app.routers.award import router as award_router
-from app.routers.education import router as education_router
-from app.routers.connect import router as connect_router
+
+# 지연된 라우터 임포트 (애플리케이션 시작 시점에 임포트하지 않음)
+# from app.routers import resume, portfolio, project, auth, talent
+# from app.routers.award import router as award_router
+# from app.routers.education import router as education_router
+# from app.routers.connect import router as connect_router
 
 app = FastAPI(
     title="🦁 LionConnect API",
@@ -95,15 +97,24 @@ app.add_middleware(
 # 정적 파일 제공 (업로드된 이미지 등)
 app.mount("/media", StaticFiles(directory="app/media"), name="media")
 
-# 라우터 등록
-app.include_router(resume.router)
-app.include_router(portfolio.router)
-app.include_router(project.router)
-app.include_router(auth.router)
-app.include_router(talent.router)
-app.include_router(award_router)
-app.include_router(education_router)
-app.include_router(connect_router)
+# 지연된 라우터 등록 (애플리케이션 시작 후)
+@app.on_event("startup")
+async def startup_event():
+    """애플리케이션 시작 시 라우터 등록"""
+    from app.routers import resume, portfolio, project, auth, talent
+    from app.routers.award import router as award_router
+    from app.routers.education import router as education_router
+    from app.routers.connect import router as connect_router
+    
+    # 라우터 등록
+    app.include_router(resume.router)
+    app.include_router(portfolio.router)
+    app.include_router(project.router)
+    app.include_router(auth.router)
+    app.include_router(talent.router)
+    app.include_router(award_router)
+    app.include_router(education_router)
+    app.include_router(connect_router)
 
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
 
@@ -127,5 +138,6 @@ def connect_request_form(request: Request):
 def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-import os
-os.makedirs("app/media/profile", exist_ok=True) 
+# 미디어 디렉토리 생성
+os.makedirs("app/media/profile", exist_ok=True)
+os.makedirs("app/media/portfolio", exist_ok=True) 
