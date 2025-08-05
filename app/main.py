@@ -3,6 +3,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
 import os
 
 # 지연된 라우터 임포트 (애플리케이션 시작 시점에 임포트하지 않음)
@@ -94,6 +95,9 @@ app.add_middleware(
     allow_headers=["*"],  # 모든 헤더 허용
 )
 
+# 세션 미들웨어 설정 (OAuth용)
+app.add_middleware(SessionMiddleware, secret_key="lionconnect-secret-key-2024")
+
 # 정적 파일 제공 (업로드된 이미지 등)
 app.mount("/media", StaticFiles(directory="app/media"), name="media")
 
@@ -140,4 +144,4 @@ def home(request: Request):
 
 # 미디어 디렉토리 생성
 os.makedirs("app/media/profile", exist_ok=True)
-os.makedirs("app/media/portfolio", exist_ok=True) 
+os.makedirs("app/media/portfolio", exist_ok=True)
