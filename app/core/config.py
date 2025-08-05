@@ -43,8 +43,7 @@ GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID', default='dummy_google_client_id')
 GOOGLE_CLIENT_SECRET = config('GOOGLE_CLIENT_SECRET', default='dummy_google_client_secret')
 KAKAO_CLIENT_ID = config('KAKAO_CLIENT_ID', default='dummy_kakao_client_id')
 KAKAO_CLIENT_SECRET = config('KAKAO_CLIENT_SECRET', default='dummy_kakao_client_secret')
-KAKAO_REDIRECT_URI = config('KAKAO_REDIRECT_URI', default='https://lion-connect.vercel.app/auth/kakao/callback')
-
+KAKAO_REDIRECT_URI = config('KAKAO_REDIRECT_URI', default='https://lionconnect-backend.onrender.com/auth/callback/kakao')
 # JWT ?�정
 SECRET_KEY = config('SECRET_KEY', default='your-secret-key-here')
 ALGORITHM = "HS256"

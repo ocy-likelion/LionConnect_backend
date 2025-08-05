@@ -112,26 +112,20 @@ async def kakao_login(
 @router.get("/callback/kakao", response_model=OAuthCallbackResponse)
 async def kakao_callback_get(
     request: Request,
-    code: str = Query(..., description="카카오에서 받은 인증 코드"),
-    state: str = Query(..., description="사용자 타입"),
+    code: str = Query(..., description="카카?�에??받�? ?�증 코드"),
+    state: str = Query(..., description="?�용???�형"),
     db: Session = Depends(get_db)
 ):
     """
-    카카오 OAuth 콜백을 처리합니다(GET 방식).
-    """
-    logger.info("=" * 60)
-    logger.info("🎯 카카오 인가코드 수신 확인")
-    logger.info(f"�� 인가코드: {code}")
-    logger.info(f"�� 인가코드 길이: {len(code)} 문자")
-    logger.info(f"�� 사용자 타입: {state}")
-    logger.info(f"🌐 요청 URL: {request.url}")
-    logger.info("=" * 60)
-    return await _process_kakao_callback(code, state, db)
-
-@router.post("/callback/kakao", response_model=OAuthCallbackResponse)
-async def kakao_callback_post(
-    callback_data: OAuthCallbackRequest,
-    db: Session = Depends(get_db)
+    카카??OAuth 콜백??처리?�니??(GET 방식).
+    logger.info("=" * 50)
+    logger.info(" GET īī�� �ݹ� ����")
+    logger.info(f" ���� �ΰ��ڵ�: {code}")
+    logger.info(f" ���� �ڵ� ����: {len(code)} ����")
+    logger.info(f" ���� state: {state}")
+    logger.info(f" ��û URL: {request.url}")
+    logger.info(f" ��û ���: {dict(request.headers)}")
+    logger.info("=" * 50)
 ):
     """
     카카??OAuth 콜백??처리?�니??(POST 방식).
@@ -159,11 +153,11 @@ async def _process_kakao_callback(code: str, state: str, db: Session):
     
     try:
         # ?�용???�형 ?�싱
-        logger.info(f"?�� ?�용???�형 ?�싱 �?- state: {state}")
+        logger.info(f"?�� ?�용???�형 ?�싱 �?- state: {state}")
         user_type = UserTypeEnum(state)
         logger.info(f"???�용???�형 ?�싱 ?�료 - user_type: {user_type}")
     except ValueError as e:
-        logger.warning(f"?�️ ?�용???�형 ?�싱 ?�패, 기본�??�용 - error: {e}")
+        logger.warning(f"?�️ ?�용???�형 ?�싱 ?�패, 기본�??�용 - error: {e}")
         user_type = UserTypeEnum.student
     
     try:
@@ -172,7 +166,7 @@ async def _process_kakao_callback(code: str, state: str, db: Session):
         token_data = await _exchange_kakao_code_for_token(code)
         logger.info("??1?�계: 카카???�큰 교환 ?�료")
         
-        # 2?�계: ?�용???�보 가?�오�?
+        # 2?�계: ?�용???�보 가?�오�?
         logger.info("?�� 2?�계: 카카???�용???�보 조회 ?�작")
         user_info = await _get_kakao_user_info_direct(token_data['access_token'])
         logger.info(f"??2?�계: 카카???�용???�보 조회 ?�료 - user_id: {user_info.get('id')}, name: {user_info.get('name')}")
@@ -198,24 +192,26 @@ async def _process_kakao_callback(code: str, state: str, db: Session):
         )
     
     except Exception as e:
-        logger.error(f"?�� 카카??로그??처리 �??�러 발생: {str(e)}")
-        logger.error(f"?�� ?�러 ?�?? {type(e).__name__}")
+        logger.error(f"?�� 카카??로그??처리 �??�러 발생: {str(e)}")
+        logger.error(f"?�� ?�러 ?�?? {type(e).__name__}")
         import traceback
         logger.error(f"?�� ?�체 ?�택?�레?�스:\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
-            detail=f"카카??로그??처리 �??�류가 발생?�습?�다: {str(e)}"
+            detail=f"카카??로그??처리 �??�류가 발생?�습?�다: {str(e)}"
         )
 
 async def _exchange_kakao_code_for_token(code: str):
     """
-    카카오 인가 코드를 액세스 토큰으로 교환
+    카카???��? 코드�??�세???�큰?�로 교환
     """
-    logger.info("�� 카카오 코드-토큰 교환 시작")
+    logger.info("?�� 카카??코드-?�큰 교환 ?�작")
     
     try:
-        logger.info(f"�� 환경변수 확인 - KAKAO_CLIENT_ID: {KAKAO_CLIENT_ID}")
-        logger.info(f"�� 환경변수 확인 - KAKAO_CLIENT_SECRET: {'*' * len(str(KAKAO_CLIENT_SECRET)) if KAKAO_CLIENT_SECRET else 'None'}")
+
+        
+        logger.info(f"?�� ?�경변???�인 - KAKAO_CLIENT_ID: {KAKAO_CLIENT_ID}")
+        logger.info(f"?�� ?�경변???�인 - KAKAO_CLIENT_SECRET: {'*' * len(str(KAKAO_CLIENT_SECRET)) if KAKAO_CLIENT_SECRET else 'None'}")
         
         token_url = "https://kauth.kakao.com/oauth/token"
         redirect_uri = KAKAO_REDIRECT_URI
@@ -228,25 +224,24 @@ async def _exchange_kakao_code_for_token(code: str):
             "code": code
         }
         
-        logger.info(f"📤 카카오 토큰 요청 데이터: grant_type={data['grant_type']}, client_id={data['client_id']}, redirect_uri={data['redirect_uri']}, code={code[:20]}...")
+        logger.info(f"?�� 카카???�큰 ?�청 ?�이?? grant_type={data['grant_type']}, client_id={data['client_id']}, redirect_uri={data['redirect_uri']}, code={code[:20]}...")
         
         async with httpx.AsyncClient() as client:
-            logger.info(f"🌐 카카오 API 호출 시작 - URL: {token_url}")
+            logger.info(f"?�� 카카??API ?�출 ?�작 - URL: {token_url}")
             response = await client.post(token_url, data=data)
-            logger.info(f"📥 카카오 API 응답 상태: {response.status_code}")
+            logger.info(f"?�� 카카??API ?�답 ?�태: {response.status_code}")
             
             if response.status_code != 200:
-                logger.error(f"❌ 카카오 토큰 교환 실패 - 상태코드: {response.status_code}")
-                logger.error(f"❌ 카카오 응답 내용: {response.text}")
+                logger.error(f"??카카???�큰 교환 ?�패 - ?�태코드: {response.status_code}")
+                logger.error(f"??카카???�답 ?�용: {response.text}")
                 response.raise_for_status()
             
             token_data = response.json()
-            logger.info("✅ 카카오 토큰 교환 성공!")
-            logger.info(f"🎉 받은 토큰 정보: access_token={token_data.get('access_token', '')[:20]}..., token_type={token_data.get('token_type', 'N/A')}")
+            logger.info("??카카???�큰 교환 ?�공")
             return token_data
             
     except Exception as e:
-        logger.error(f"�� 카카오 토큰 교환 에러: {str(e)}")
+        logger.error(f"?�� 카카???�큰 교환 �??�러: {str(e)}")
         raise
 
 async def _get_kakao_user_info_direct(access_token: str):
@@ -289,7 +284,7 @@ async def _get_kakao_user_info_direct(access_token: str):
             return result
             
     except Exception as e:
-        logger.error(f"?�� 카카???�용???�보 조회 �??�러: {str(e)}")
+        logger.error(f"?�� 카카???�용???�보 조회 �??�러: {str(e)}")
         raise
 
 @router.get("/me", response_model=UserResponse)
