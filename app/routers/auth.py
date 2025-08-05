@@ -84,6 +84,13 @@ async def kakao_login(
     """
     카카오 OAuth 로그인을 시작합니다.
     """
+    # 카카오 OAuth가 설정되지 않은 경우
+    if not hasattr(oauth, 'kakao'):
+        raise HTTPException(
+            status_code=503, 
+            detail="카카오 로그인이 현재 설정되지 않았습니다. 관리자에게 문의하세요."
+        )
+    
     redirect_uri = "https://lionconnect-backend.onrender.com/auth/callback/kakao"
     return await oauth.kakao.authorize_redirect(
         request=request,
@@ -102,6 +109,13 @@ async def kakao_callback(
     """
     카카오 OAuth 콜백을 처리합니다.
     """
+    # 카카오 OAuth가 설정되지 않은 경우
+    if not hasattr(oauth, 'kakao'):
+        raise HTTPException(
+            status_code=503, 
+            detail="카카오 로그인이 현재 설정되지 않았습니다. 관리자에게 문의하세요."
+        )
+    
     try:
         # 사용자 유형 파싱
         user_type = UserTypeEnum(state)

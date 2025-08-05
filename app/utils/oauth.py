@@ -13,31 +13,33 @@ from fastapi import Request
 config = Config('.env')
 oauth = OAuth(config)
 
-# Google OAuth 설정
-oauth.register(
-    name='google',
-    client_id=GOOGLE_CLIENT_ID,
-    client_secret=GOOGLE_CLIENT_SECRET,
-    server_metadata_url='https://accounts.google.com/.well-known/openid_configuration',
-    client_kwargs={
-        'scope': 'openid email profile'
-    }
-)
+# Google OAuth 설정 (환경 변수가 있을 때만 등록)
+if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
+    oauth.register(
+        name='google',
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+        server_metadata_url='https://accounts.google.com/.well-known/openid_configuration',
+        client_kwargs={
+            'scope': 'openid email profile'
+        }
+    )
 
-# Kakao OAuth 설정
-oauth.register(
-    name='kakao',
-    client_id=KAKAO_CLIENT_ID,
-    client_secret=KAKAO_CLIENT_SECRET,
-    access_token_url='https://kauth.kakao.com/oauth/token',
-    access_token_params=None,
-    authorize_url='https://kauth.kakao.com/oauth/authorize',
-    authorize_params=None,
-    api_base_url='https://kapi.kakao.com/',
-    client_kwargs={
-        'scope': 'profile_nickname profile_image account_email'
-    }
-)
+# Kakao OAuth 설정 (환경 변수가 있을 때만 등록)
+if KAKAO_CLIENT_ID and KAKAO_CLIENT_SECRET:
+    oauth.register(
+        name='kakao',
+        client_id=KAKAO_CLIENT_ID,
+        client_secret=KAKAO_CLIENT_SECRET,
+        access_token_url='https://kauth.kakao.com/oauth/token',
+        access_token_params=None,
+        authorize_url='https://kauth.kakao.com/oauth/authorize',
+        authorize_params=None,
+        api_base_url='https://kapi.kakao.com/',
+        client_kwargs={
+            'scope': 'profile_nickname profile_image account_email'
+        }
+    )
 
 def get_or_create_user(db: Session, oauth_provider: OAuthProviderEnum, 
                       oauth_data: Dict[str, Any], user_type: UserTypeEnum = UserTypeEnum.student) -> User:
