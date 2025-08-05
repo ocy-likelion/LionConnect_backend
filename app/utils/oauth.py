@@ -2,12 +2,12 @@ from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
 from app.core.config import (
     GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
-    KAKAO_CLIENT_ID, KAKAO_CLIENT_SECRET,
-    OAUTH_REDIRECT_URL
+    KAKAO_CLIENT_ID, KAKAO_CLIENT_SECRET
 )
 from app.models.user import User, OAuthProviderEnum, UserTypeEnum
 from sqlalchemy.orm import Session
 from typing import Optional, Dict, Any
+from fastapi import Request
 
 # OAuth 설정
 config = Config('.env')
@@ -107,6 +107,24 @@ def get_kakao_user_info(token: Dict[str, Any]) -> Dict[str, Any]:
     """
     # Kakao API에서 사용자 정보 가져오기
     resp = oauth.kakao.get('v2/user/me', token=token)
+    user_info = resp.json()
+    
+    account = user_info.get('kakao_account', {})
+    profile = account.get('profile', {})
+    
+    return {
+        'id': str(user_info.get('id')),
+        'email': account.get('email'),
+        'name': profile.get('nickname'),
+        'profile_image_url': profile.get('profile_image_url')
+    }
+
+async def get_kakao_user_info_async(request: Request, token: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Kakao OAuth 토큰에서 사용자 정보를 비동기로 추출합니다.
+    """
+    # Kakao API에서 사용자 정보 가져오기
+    resp = await oauth.kakao.get('v2/user/me', token=token, request=request)
     user_info = resp.json()
     
     account = user_info.get('kakao_account', {})

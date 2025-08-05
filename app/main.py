@@ -100,11 +100,15 @@ app.mount("/media", StaticFiles(directory="app/media"), name="media")
 # 지연된 라우터 등록 (애플리케이션 시작 후)
 @app.on_event("startup")
 async def startup_event():
-    """애플리케이션 시작 시 라우터 등록"""
+    """애플리케이션 시작 시 라우터 등록 및 OAuth 초기화"""
     from app.routers import resume, portfolio, project, auth, talent
     from app.routers.award import router as award_router
     from app.routers.education import router as education_router
     from app.routers.connect import router as connect_router
+    from app.utils.oauth import oauth
+    
+    # OAuth 미들웨어 초기화 (라우터 등록 전에 수행)
+    oauth.init_app(app)
     
     # 라우터 등록
     app.include_router(resume.router)
