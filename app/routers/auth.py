@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from sqlalchemy.orm import Session
-from app.schemas.user import UserResponse, TokenResponse, OAuthLoginRequest, OAuthCallbackResponse, LoginRequest, UserCreateStudent, UserCreateCompany, UserTypeEnum
+from app.schemas.user import UserResponse, TokenResponse, OAuthLoginRequest, OAuthCallbackResponse, OAuthCallbackRequest, LoginRequest, UserCreateStudent, UserCreateCompany, UserTypeEnum
 from app.models.user import User, StudentProfile, CompanyProfile, OAuthProviderEnum
 from app.core.config import SessionLocal
 from app.utils.auth import hash_password, verify_password, create_access_token
 from app.utils.oauth import oauth, get_or_create_user, get_kakao_user_info_async
 from datetime import timedelta
 from typing import Optional
+import httpx
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -100,14 +101,34 @@ async def kakao_login(
     )
 
 @router.get("/callback/kakao", response_model=OAuthCallbackResponse)
-async def kakao_callback(
+async def kakao_callback_get(
     request: Request,
     code: str = Query(..., description="카카오에서 받은 인증 코드"),
     state: str = Query(..., description="사용자 유형"),
     db: Session = Depends(get_db)
 ):
     """
-    카카오 OAuth 콜백을 처리합니다.
+    카카오 OAuth 콜백을 처리합니다 (GET 방식).
+    """
+    return await _process_kakao_callback(code, state, db)
+
+@router.post("/callback/kakao", response_model=OAuthCallbackResponse)
+async def kakao_callback_post(
+    callback_data: OAuthCallbackRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    카카오 OAuth 콜백을 처리합니다 (POST 방식).
+    """
+    return await _process_kakao_callback(
+        callback_data.code, 
+        callback_data.user_type.value, 
+        db
+    )
+
+async def _process_kakao_callback(code: str, state: str, db: Session):
+    """
+    카카오 OAuth 콜백 처리 공통 로직
     """
     # 카카오 OAuth가 설정되지 않은 경우
     if not hasattr(oauth, 'kakao'):
@@ -122,26 +143,79 @@ async def kakao_callback(
     except ValueError:
         user_type = UserTypeEnum.student
     
-    # 액세스 토큰 획득
-    token = await oauth.kakao.authorize_access_token(request)
+    try:
+        # 카카오 API에서 직접 액세스 토큰 획득
+        token_data = await _exchange_kakao_code_for_token(code)
+        
+        # 사용자 정보 가져오기
+        user_info = await _get_kakao_user_info_direct(token_data['access_token'])
+        
+        # 사용자 찾기 또는 생성
+        user = get_or_create_user(db, OAuthProviderEnum.kakao, user_info, user_type)
+        
+        # JWT 토큰 생성
+        access_token = create_access_token(
+            data={"sub": str(user.id), "user_type": user.user_type.value},
+            expires_delta=timedelta(minutes=60*24)
+        )
+        
+        return OAuthCallbackResponse(
+            access_token=access_token,
+            user=user,
+            is_new_user=user.oauth_provider == OAuthProviderEnum.kakao and user.oauth_id == user_info.get('id')
+        )
     
-    # 사용자 정보 가져오기
-    user_info = await get_kakao_user_info_async(request, token)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"카카오 로그인 처리 중 오류가 발생했습니다: {str(e)}"
+        )
+
+async def _exchange_kakao_code_for_token(code: str):
+    """
+    카카오 인가 코드를 액세스 토큰으로 교환
+    """
+    from app.core.config import KAKAO_CLIENT_ID, KAKAO_CLIENT_SECRET
     
-    # 사용자 찾기 또는 생성
-    user = get_or_create_user(db, OAuthProviderEnum.kakao, user_info, user_type)
+    token_url = "https://kauth.kakao.com/oauth/token"
+    redirect_uri = "https://lionconnect-backend.onrender.com/auth/callback/kakao"
     
-    # JWT 토큰 생성
-    access_token = create_access_token(
-        data={"sub": str(user.id), "user_type": user.user_type.value},
-        expires_delta=timedelta(minutes=60*24)
-    )
+    data = {
+        "grant_type": "authorization_code",
+        "client_id": KAKAO_CLIENT_ID,
+        "client_secret": KAKAO_CLIENT_SECRET,
+        "redirect_uri": redirect_uri,
+        "code": code
+    }
     
-    return OAuthCallbackResponse(
-        access_token=access_token,
-        user=user,
-        is_new_user=user.oauth_provider == OAuthProviderEnum.kakao and user.oauth_id == user_info.get('id')
-    )
+    async with httpx.AsyncClient() as client:
+        response = await client.post(token_url, data=data)
+        response.raise_for_status()
+        return response.json()
+
+async def _get_kakao_user_info_direct(access_token: str):
+    """
+    카카오 액세스 토큰으로 사용자 정보 조회
+    """
+    user_info_url = "https://kapi.kakao.com/v2/user/me"
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.get(user_info_url, headers=headers)
+        response.raise_for_status()
+        user_data = response.json()
+        
+        account = user_data.get('kakao_account', {})
+        profile = account.get('profile', {})
+        
+        return {
+            'id': str(user_data.get('id')),
+            'email': account.get('email'),
+            'name': profile.get('nickname'),
+            'profile_image_url': profile.get('profile_image_url')
+        }
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user(request: Request, db: Session = Depends(get_db)):
@@ -163,4 +237,4 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)):
 
 @router.post("/logout")
 async def logout():
-    return {"message": "로그아웃되었습니다. 클라이언트에서 토큰을 삭제해주세요."} 
+    return {"message": "로그아웃되었습니다. 클라이언트에서 토큰을 삭제해주세요."}

@@ -44,8 +44,12 @@ class TokenResponse(BaseModel):
 class OAuthLoginRequest(BaseModel):
     user_type: UserTypeEnum = UserTypeEnum.student
 
+class OAuthCallbackRequest(BaseModel):
+    code: str
+    user_type: UserTypeEnum = UserTypeEnum.student
+
 class OAuthCallbackResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
-    is_new_user: bool = False 
+    is_new_user: bool = False
