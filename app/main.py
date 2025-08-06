@@ -88,10 +88,12 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",  # React 개발 서버
         "http://localhost:3001",  # 다른 포트의 개발 서버
-        "https://lion-connect.vercel.app",  # 프로덕션 프론트엔드 도메인 (실제 도메인으로 변경 필요)
+        "https://lion-connect.vercel.app",  # 프로덕션 프론트엔드 도메인
+        "https://lion-connect-git-main.vercel.app",  # Vercel 프리뷰 도메인
+        "https://lion-connect-*.vercel.app",  # Vercel 모든 서브도메인
     ],
     allow_credentials=True,
-    allow_methods=["*"],  # 모든 HTTP 메서드 허용
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # 필요한 HTTP 메서드만 허용
     allow_headers=["*"],  # 모든 헤더 허용
 )
 

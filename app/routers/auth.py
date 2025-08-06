@@ -150,8 +150,17 @@ async def kakao_callback_get(
         
     except Exception as e:
         logger.error(f"❌ 카카오 로그인 처리 중 오류: {str(e)}")
+        
+        # 오류 메시지 정리 (URL 인코딩 문제 방지)
+        error_message = str(e).replace(":", "%3A").replace(" ", "%20")
+        
+        # 환경에 따른 프론트엔드 리다이렉트 URI 결정
+        is_production = os.environ.get('ENVIRONMENT', 'development') == 'production'
+        frontend_uri = FRONTEND_REDIRECT_URI if is_production else FRONTEND_DEV_REDIRECT_URI
+        
         # 오류 시 프론트엔드로 오류 정보와 함께 리다이렉트
-        error_url = f"{FRONTEND_DEV_REDIRECT_URI}?error=login_failed&message={str(e)}"
+        error_url = f"{frontend_uri}?error=login_failed&message={error_message}"
+        logger.info(f"🔄 오류와 함께 프론트엔드로 리다이렉트: {error_url}")
         return RedirectResponse(url=error_url)
 
 @router.post("/callback/kakao", response_model=OAuthCallbackResponse)
