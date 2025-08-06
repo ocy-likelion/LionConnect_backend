@@ -7,7 +7,6 @@ from app.schemas.user import UserCreateStudent, UserCreateCompany, UserResponse,
 from app.schemas.auth import OAuthCallbackRequest, OAuthCallbackResponse
 from app.utils.auth import create_access_token, verify_token
 from app.utils.oauth import get_or_create_user, oauth
-from app.utils.file import save_uploaded_file
 import httpx
 import logging
 from datetime import timedelta

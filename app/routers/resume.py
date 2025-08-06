@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.schemas.resume import ResumeBasicInfoResponse
 from app.models.resume import ResumeBasicInfo
 from app.models.user import User
-from app.core.config import SessionLocal, get_db
+from app.core.config import get_db
 from app.utils.file import save_profile_image
 from app.utils.auth import get_current_user
 from typing import Optional
@@ -17,13 +17,6 @@ from app.schemas.award import AwardResponse
 from app.schemas.education import EducationResponse
 
 router = APIRouter(prefix="/resumes", tags=["Resume"])
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.post(
     "/basic-info/", 

@@ -4,18 +4,11 @@ from app.models.user import User, StudentProfile
 from app.models.portfolio import Portfolio
 from app.models.connect import ConnectRequest
 from app.schemas.connect import ConnectRequestCreate, ConnectRequestResponse
-from app.core.config import SessionLocal, SLACK_WEBHOOK_URL
+from app.core.config import get_db, SLACK_WEBHOOK_URL
 from app.utils.slack import send_slack_message
 from typing import List, Optional
 
 router = APIRouter(prefix="/talents", tags=["Talent"])
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.get(
     "/",
@@ -98,7 +91,7 @@ def list_talents(
     response_model=ConnectRequestResponse,
     summary="인재 연결 요청",
     description="""
-    특정 인재(수료생)에게 채용/연결 요청을 보냅니다.\n
+    기업담당자가 수료생에게 연결 요청을 보냅니다.\n
     - `user_id`: 수료생 사용자 ID (필수)\n
     - `company_representative_name`: 기업담당자 이름 (필수)\n
     - `company_representative_email`: 기업담당자 이메일 (필수)\n
