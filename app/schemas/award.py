@@ -2,18 +2,19 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
-class AwardResponse(BaseModel):
-    id: int
-    resume_id: int
-    name: str
-    date: str
-    organization: str
-    created_at: datetime
-    class Config:
-        orm_mode = True 
+class AwardBase(BaseModel):
+    title: str
+    description: Optional[str] = None
+    date: Optional[datetime] = None
 
-class AwardCreate(BaseModel):
+class AwardCreate(AwardBase):
+    pass
+
+class AwardResponse(AwardBase):
+    id: int
     user_id: int
-    name: str
-    date: str
-    organization: str 
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True 

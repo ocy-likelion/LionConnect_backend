@@ -8,16 +8,12 @@ class UserBase(BaseModel):
 
 class UserCreateStudent(UserBase):
     password: str
-    course_name: str
-    course_generation: str
-    tech_stack: str
+    name: str
 
 class UserCreateCompany(UserBase):
     password: str
+    name: str
     company_name: str
-    industry: str
-    size: str
-    intro: str
 
 class UserResponse(BaseModel):
     id: int
@@ -43,13 +39,3 @@ class TokenResponse(BaseModel):
 
 class OAuthLoginRequest(BaseModel):
     user_type: UserTypeEnum = UserTypeEnum.student
-
-class OAuthCallbackRequest(BaseModel):
-    code: str
-    user_type: UserTypeEnum = UserTypeEnum.student
-
-class OAuthCallbackResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-    user: UserResponse
-    is_new_user: bool = False

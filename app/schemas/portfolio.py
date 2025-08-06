@@ -1,33 +1,32 @@
-from pydantic import BaseModel, HttpUrl
-from typing import Optional
+from pydantic import BaseModel
+from typing import Optional, List
 from datetime import datetime
 
 class PortfolioBase(BaseModel):
-    user_id: int
-    is_representative: Optional[bool] = False
-    project_url: Optional[str] = None
-    project_name: str
-    project_intro: str
-    project_period: str
-    role: str
+    title: str
+    description: Optional[str] = None
+    github_url: Optional[str] = None
+    demo_url: Optional[str] = None
+    is_representative: bool = False
 
 class PortfolioCreate(PortfolioBase):
     pass
 
-class PortfolioUpdate(BaseModel):
-    is_representative: Optional[bool] = None
-    project_url: Optional[str] = None
-    project_name: Optional[str] = None
-    project_intro: Optional[str] = None
-    project_period: Optional[str] = None
-    role: Optional[str] = None
-    # 이미지 교체는 별도 처리
+class PortfolioUpdate(PortfolioBase):
+    pass
 
 class PortfolioResponse(PortfolioBase):
     id: int
-    image: Optional[str]
+    user_id: int
     created_at: datetime
     updated_at: datetime
 
     class Config:
-        orm_mode = True 
+        from_attributes = True
+
+class PortfolioListResponse(BaseModel):
+    portfolios: List[PortfolioResponse]
+    total: int
+
+    class Config:
+        from_attributes = True 

@@ -1,32 +1,34 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 class ProjectBase(BaseModel):
-    portfolio_id: int
-    project_name: str
-    project_period: str
-    project_intro: str
-    description: str
-    role: str
-    tech_stack: str
-    github_url: Optional[str]
+    title: str
+    description: Optional[str] = None
+    github_url: Optional[str] = None
+    demo_url: Optional[str] = None
+    tech_stack: Optional[str] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
 
 class ProjectCreate(ProjectBase):
     pass
 
-class ProjectUpdate(BaseModel):
-    project_name: Optional[str] = None
-    project_period: Optional[str] = None
-    project_intro: Optional[str] = None
-    description: Optional[str] = None
-    role: Optional[str] = None
-    tech_stack: Optional[str] = None
+class ProjectUpdate(ProjectBase):
+    pass
 
 class ProjectResponse(ProjectBase):
     id: int
+    user_id: int
     created_at: datetime
     updated_at: datetime
 
     class Config:
-        orm_mode = True 
+        from_attributes = True
+
+class ProjectListResponse(BaseModel):
+    projects: List[ProjectResponse]
+    total: int
+
+    class Config:
+        from_attributes = True 
