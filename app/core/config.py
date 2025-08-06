@@ -10,10 +10,7 @@ KAKAO_CLIENT_SECRET = os.environ.get('KAKAO_CLIENT_SECRET', 'dummy_kakao_client_
 
 # OAuth 리다이렉트 URI 설정
 # 백엔드 콜백 URI (카카오 개발자 콘솔에 등록할 URI)
-KAKAO_BACKEND_CALLBACK_URI = os.environ.get(
-    'KAKAO_BACKEND_CALLBACK_URI', 
-    'https://lionconnect-backend.onrender.com/auth/callback/kakao'
-)
+KAKAO_BACKEND_CALLBACK_URI = 'https://lionconnect-backend.onrender.com/auth/callback/kakao'
 
 # 프론트엔드 리다이렉트 URI (실제 사용자 리다이렉트)
 FRONTEND_REDIRECT_URI = os.environ.get(
