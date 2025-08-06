@@ -18,7 +18,7 @@ app = FastAPI(
     ## LionConnect - 학생과 기업을 연결하는 플랫폼 API
     
     ### 주요 기능
-    - 🔐 **소셜 로그인**: Google, Kakao OAuth2 지원
+    - 🔐 **기본 로그인**: 이메일/비밀번호 인증
     - 👨‍🎓 **학생 프로필**: 이력서, 포트폴리오 관리
     - 🏢 **기업 프로필**: 채용 정보, 기업 소개
     - 🤝 **매칭 시스템**: 학생과 기업 연결
@@ -26,7 +26,7 @@ app = FastAPI(
     
     ### 인증 방식
     - JWT Bearer Token 사용
-    - 소셜 로그인 후 자동 토큰 발급
+    - 로그인 후 자동 토큰 발급
     - 토큰은 Authorization 헤더에 `Bearer {token}` 형태로 전송
     
     ### 사용자 유형
@@ -38,12 +38,33 @@ app = FastAPI(
     - **API 문서**: `/docs` (Swagger UI)
     - **대안 문서**: `/redoc` (ReDoc)
     
-    ### 소셜 로그인 플로우
-    1. 사용자가 소셜 로그인 버튼 클릭
-    2. OAuth 제공자(Google/Kakao)로 리디렉트
-    3. 인증 완료 후 백엔드 콜백 URL로 리디렉트
-    4. 백엔드에서 사용자 정보 처리 및 JWT 토큰 생성
-    5. 클라이언트로 토큰 반환
+    ### 로그인 플로우
+    1. 사용자가 이메일/비밀번호로 회원가입
+    2. 로그인 시 JWT 토큰 발급
+    3. API 요청 시 Authorization 헤더에 토큰 포함
+    4. 토큰 만료 시 재로그인 필요
+    
+    ### API 사용 예시
+    ```bash
+    # 회원가입
+    POST /auth/signup/student
+    {
+      "email": "student@example.com",
+      "password": "password123",
+      "name": "홍길동"
+    }
+    
+    # 로그인
+    POST /auth/login
+    {
+      "email": "student@example.com",
+      "password": "password123"
+    }
+    
+    # 인증이 필요한 API 호출
+    GET /auth/me
+    Authorization: Bearer {access_token}
+    ```
     """,
     version="2.0.0",
     contact={
@@ -57,7 +78,7 @@ app = FastAPI(
     openapi_tags=[
         {
             "name": "Auth",
-            "description": "인증 관련 API - 소셜 로그인, 토큰 관리"
+            "description": "인증 관련 API - 회원가입, 로그인, 토큰 관리"
         },
         {
             "name": "Resume",
@@ -78,6 +99,14 @@ app = FastAPI(
         {
             "name": "Connect",
             "description": "커넥트 요청 API - 기업담당자의 수료생 연결 요청"
+        },
+        {
+            "name": "Award",
+            "description": "수상 경력 관리 API - 학생의 수상 내역 관리"
+        },
+        {
+            "name": "Education",
+            "description": "학력 관리 API - 학생의 학력 정보 관리"
         }
     ]
 )
@@ -97,7 +126,7 @@ app.add_middleware(
     allow_headers=["*"],  # 모든 헤더 허용
 )
 
-# 세션 미들웨어 설정 (OAuth용)
+# 세션 미들웨어 설정
 app.add_middleware(SessionMiddleware, secret_key="lionconnect-secret-key-2024")
 
 # 정적 파일 제공 (업로드된 이미지 등)

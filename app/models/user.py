@@ -3,6 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
+import bcrypt
 
 Base = declarative_base()
 
@@ -10,22 +11,16 @@ class UserTypeEnum(str, enum.Enum):
     student = "student"
     company = "company"
 
-class OAuthProviderEnum(str, enum.Enum):
-    google = "google"
-    kakao = "kakao"
-
 class User(Base):
     __tablename__ = "user"
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, nullable=False, index=True)
-    password_hash = Column(String, nullable=True)  # 소셜 로그인 사용자는 비밀번호가 없을 수 있음
+    password_hash = Column(String, nullable=False)  # 기본 로그인이므로 비밀번호 필수
+    name = Column(String, nullable=False)  # 사용자 이름 필수
     user_type = Column(Enum(UserTypeEnum), nullable=False)
     
-    # OAuth 관련 필드
-    oauth_provider = Column(Enum(OAuthProviderEnum), nullable=True)
-    oauth_id = Column(String, nullable=True)  # OAuth 제공자의 사용자 ID
-    name = Column(String, nullable=True)  # OAuth에서 가져온 이름
-    profile_image = Column(String, nullable=True)  # OAuth에서 가져온 프로필 이미지
+    # 기업 사용자 전용 필드
+    company_name = Column(String, nullable=True)  # 기업 사용자만 사용
     
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -33,11 +28,14 @@ class User(Base):
     student_profile = relationship("StudentProfile", uselist=False, back_populates="user")
     company_profile = relationship("CompanyProfile", uselist=False, back_populates="user")
 
-    # OAuth ID와 제공자로 유니크 인덱스 생성
-    __table_args__ = (
-        # OAuth 사용자는 provider + oauth_id 조합이 유니크해야 함
-        # 일반 사용자는 email이 유니크해야 함
-    )
+    def set_password(self, password: str):
+        """비밀번호를 해시화하여 저장"""
+        salt = bcrypt.gensalt()
+        self.password_hash = bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+
+    def check_password(self, password: str) -> bool:
+        """비밀번호 확인"""
+        return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
 
 class StudentProfile(Base):
     __tablename__ = "student_profile"

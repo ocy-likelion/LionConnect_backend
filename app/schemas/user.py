@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
-from app.models.user import UserTypeEnum, OAuthProviderEnum
+from app.models.user import UserTypeEnum
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -18,10 +18,9 @@ class UserCreateCompany(UserBase):
 class UserResponse(BaseModel):
     id: int
     email: str
+    name: str
     user_type: UserTypeEnum
-    oauth_provider: Optional[OAuthProviderEnum] = None
-    name: Optional[str] = None
-    profile_image: Optional[str] = None
+    company_name: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -36,6 +35,3 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
-
-class OAuthLoginRequest(BaseModel):
-    user_type: UserTypeEnum = UserTypeEnum.student

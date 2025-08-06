@@ -2,32 +2,11 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
-# 환경 변수 직접 로딩 (Config 객체 사용하지 않음 - 타임아웃 방지)
-GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', 'dummy_google_client_id')
-GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', 'dummy_google_client_secret')
-KAKAO_CLIENT_ID = os.environ.get('KAKAO_CLIENT_ID', 'dummy_kakao_client_id')
-KAKAO_CLIENT_SECRET = os.environ.get('KAKAO_CLIENT_SECRET', 'dummy_kakao_client_secret')
-
-# OAuth 리다이렉트 URI 설정
-# 백엔드 콜백 URI (카카오 개발자 콘솔에 등록할 URI)
-KAKAO_BACKEND_CALLBACK_URI = 'https://lionconnect-backend.onrender.com/auth/callback/kakao'
-
-# 프론트엔드 리다이렉트 URI (실제 사용자 리다이렉트)
-FRONTEND_REDIRECT_URI = os.environ.get(
-    'FRONTEND_REDIRECT_URI',
-    'https://lion-connect.vercel.app/auth/kakao/callback'
-)
-
-# 개발 환경용 프론트엔드 URI
-FRONTEND_DEV_REDIRECT_URI = os.environ.get(
-    'FRONTEND_DEV_REDIRECT_URI',
-    'http://localhost:3000/auth/kakao/callback'
-)
-
+# 기본 설정
 SECRET_KEY = os.environ.get('SECRET_KEY', 'your-secret-key-here')
 SLACK_WEBHOOK_URL = os.environ.get('SLACK_WEBHOOK_URL', None)
 
-# 개발 환경에서 SQLite 사용 (파일 기반 또는 메모리 DB)
+# 데이터베이스 설정
 SQLALCHEMY_DATABASE_URL = os.environ.get(
     "DATABASE_URL",
     "postgresql://lionconnect_user:gKIoR3YWUjnOjpbZgPXWygVncYMaSi0o@dpg-d1mek9e3jp1c73ennt6g-a/lionconnect"
