@@ -6,11 +6,11 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 import os
 
-# 지연된 라우터 임포트 (애플리케이션 시작 시점에 임포트하지 않음)
-# from app.routers import resume, portfolio, project, auth, talent
-# from app.routers.award import router as award_router
-# from app.routers.education import router as education_router
-# from app.routers.connect import router as connect_router
+# 즉시 라우터 임포트 (지연 임포트 제거)
+from app.routers import resume, portfolio, project, auth, talent
+from app.routers.award import router as award_router
+from app.routers.education import router as education_router
+from app.routers.connect import router as connect_router
 
 app = FastAPI(
     title="🦁 LionConnect API",
@@ -101,24 +101,15 @@ app.add_middleware(SessionMiddleware, secret_key="lionconnect-secret-key-2024")
 # 정적 파일 제공 (업로드된 이미지 등)
 app.mount("/media", StaticFiles(directory="app/media"), name="media")
 
-# 지연된 라우터 등록 (애플리케이션 시작 후)
-@app.on_event("startup")
-async def startup_event():
-    """애플리케이션 시작 시 라우터 등록"""
-    from app.routers import resume, portfolio, project, auth, talent
-    from app.routers.award import router as award_router
-    from app.routers.education import router as education_router
-    from app.routers.connect import router as connect_router
-    
-    # 라우터 등록
-    app.include_router(resume.router)
-    app.include_router(portfolio.router)
-    app.include_router(project.router)
-    app.include_router(auth.router)
-    app.include_router(talent.router)
-    app.include_router(award_router)
-    app.include_router(education_router)
-    app.include_router(connect_router)
+# 즉시 라우터 등록 (지연 등록 제거)
+app.include_router(resume.router)
+app.include_router(portfolio.router)
+app.include_router(project.router)
+app.include_router(auth.router)
+app.include_router(talent.router)
+app.include_router(award_router)
+app.include_router(education_router)
+app.include_router(connect_router)
 
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
 
@@ -145,3 +136,14 @@ def home(request: Request):
 # 미디어 디렉토리 생성
 os.makedirs("app/media/profile", exist_ok=True)
 os.makedirs("app/media/portfolio", exist_ok=True)
+
+# 서버 시작 스크립트 추가
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 8000)),
+        reload=False,  # 프로덕션에서는 reload 비활성화
+        workers=1
+    )

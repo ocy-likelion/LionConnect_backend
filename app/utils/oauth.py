@@ -1,5 +1,4 @@
 from authlib.integrations.starlette_client import OAuth
-from starlette.config import Config
 from app.core.config import (
     GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
     KAKAO_CLIENT_ID, KAKAO_CLIENT_SECRET
@@ -9,9 +8,8 @@ from sqlalchemy.orm import Session
 from typing import Optional, Dict, Any
 from fastapi import Request
 
-# OAuth 설정
-config = Config('.env')
-oauth = OAuth(config)
+# OAuth 설정 (Config 객체 사용하지 않음)
+oauth = OAuth()
 
 # Google OAuth 설정 (환경 변수가 있을 때만 등록)
 if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
