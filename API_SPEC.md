@@ -44,7 +44,14 @@
 ## Project (프로젝트)
 
 ### POST /projects/
-- 프로젝트 생성 (포트폴리오에 연결)
+- 프로젝트 생성 (포트폴리오에 연결) - FormData 지원
+- 요청: multipart/form-data
+  - 필수: portfolio_id, project_name, project_period, project_intro, description, role, tech_stack, user_id
+  - 선택: github_url
+- 응답: 생성된 프로젝트 정보
+
+### POST /projects/json
+- 프로젝트 생성 (포트폴리오에 연결) - JSON 지원
 - 요청: JSON
   - 필수: portfolio_id, project_name, project_period, project_intro, description, role, tech_stack, user_id
   - 선택: github_url

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Form, File
 from sqlalchemy.orm import Session
 from app.schemas.project import ProjectCreate, ProjectResponse, ProjectListResponse, ProjectUpdate
 from app.core.config import get_db
@@ -15,11 +15,19 @@ router = APIRouter(prefix="/projects", tags=["Project"])
 
 @router.post("/", response_model=ProjectResponse)
 def create_project(
-    project: ProjectCreate,
+    portfolio_id: int = Form(..., description="포트폴리오 ID"),
+    project_name: str = Form(..., description="프로젝트명"),
+    project_period: str = Form(..., description="프로젝트 기간"),
+    project_intro: str = Form(..., description="프로젝트 소개"),
+    description: str = Form(..., description="프로젝트 설명"),
+    role: str = Form(..., description="담당 역할"),
+    tech_stack: str = Form(..., description="기술 스택"),
+    user_id: int = Form(..., description="사용자 ID"),
+    github_url: Optional[str] = Form(None, description="GitHub URL"),
     db: Session = Depends(get_db)
 ):
     """
-    프로젝트를 생성합니다.
+    프로젝트를 생성합니다. (FormData 지원)
     
     필수 필드:
     - portfolio_id: 포트폴리오 ID
@@ -36,7 +44,72 @@ def create_project(
     """
     try:
         # 요청 데이터 로깅
-        logger.info(f"프로젝트 생성 요청 데이터: {project.dict()}")
+        request_data = {
+            "portfolio_id": portfolio_id,
+            "project_name": project_name,
+            "project_period": project_period,
+            "project_intro": project_intro,
+            "description": description,
+            "role": role,
+            "tech_stack": tech_stack,
+            "user_id": user_id,
+            "github_url": github_url
+        }
+        logger.info(f"프로젝트 생성 요청 데이터: {request_data}")
+        
+        # 유효성 검사
+        if portfolio_id <= 0:
+            raise HTTPException(status_code=400, detail="포트폴리오 ID는 0보다 커야 합니다")
+        if user_id <= 0:
+            raise HTTPException(status_code=400, detail="사용자 ID는 0보다 커야 합니다")
+        if not project_name.strip():
+            raise HTTPException(status_code=400, detail="프로젝트명은 비어있을 수 없습니다")
+        
+        # 프로젝트 생성
+        db_project = Project(
+            portfolio_id=portfolio_id,
+            project_name=project_name.strip(),
+            project_period=project_period.strip(),
+            project_intro=project_intro.strip(),
+            description=description.strip(),
+            role=role.strip(),
+            tech_stack=tech_stack.strip(),
+            user_id=user_id,
+            github_url=github_url.strip() if github_url else None,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        
+        logger.info(f"생성할 프로젝트 객체: {db_project.__dict__}")
+        
+        db.add(db_project)
+        db.commit()
+        db.refresh(db_project)
+        
+        logger.info(f"프로젝트 생성 성공: ID {db_project.id}")
+        return db_project
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"프로젝트 생성 중 오류 발생: {str(e)}")
+        logger.error(f"요청 데이터: {request_data}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"프로젝트 생성 중 오류가 발생했습니다: {str(e)}")
+
+@router.post("/json", response_model=ProjectResponse)
+def create_project_json(
+    project: ProjectCreate,
+    db: Session = Depends(get_db)
+):
+    """
+    프로젝트를 생성합니다. (JSON 지원)
+    
+    기존 JSON 방식의 API를 유지합니다.
+    """
+    try:
+        # 요청 데이터 로깅
+        logger.info(f"프로젝트 생성 요청 데이터 (JSON): {project.dict()}")
         
         # 프로젝트 생성
         db_project = Project(
