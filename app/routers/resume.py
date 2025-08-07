@@ -202,8 +202,16 @@ def create_resume_basic_info(
                             {
                                 "id": 1,
                                 "portfolio_id": 1,
-                                "title": "쇼핑몰 프로젝트",
-                                "description": "React + Node.js 쇼핑몰"
+                                "project_name": "쇼핑몰 웹사이트",
+                                "project_period": "2023-01 ~ 2023-06",
+                                "project_intro": "React와 Node.js를 활용한 풀스택 쇼핑몰",
+                                "description": "사용자가 상품을 검색하고 구매할 수 있는 웹사이트",
+                                "role": "프론트엔드 개발",
+                                "tech_stack": "React, TypeScript, CSS",
+                                "user_id": 1,
+                                "github_url": "https://github.com/username/shopping-mall",
+                                "created_at": "2023-06-30T12:00:00",
+                                "updated_at": "2023-07-01T12:00:00"
                             }
                         ],
                         "awards": [
@@ -251,20 +259,136 @@ def get_user_resume_detail(
     이력서 기본 정보와 함께 관련된 포트폴리오, 프로젝트, 수상 내역, 교육 내역을 모두 포함하여,
     DB에 저장된 원본값 그대로(가공 없이) 반환합니다.
     """
-    resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.id == user_id).first()
-    if not resume:
-        raise HTTPException(status_code=404, detail="사용자의 이력서를 찾을 수 없습니다.")
-    
-    portfolios = db.query(Portfolio).filter(Portfolio.user_id == user_id).all()
-    projects = db.query(Project).filter(Project.user_id == user_id).all()
-    awards = db.query(Award).filter(Award.resume_id == resume.id).all()
-    educations = db.query(Education).filter(Education.resume_id == resume.id).all()
-    
-    # 모든 필드를 원본값 그대로 반환
-    return {
-        "resume": resume,
-        "portfolios": portfolios,
-        "projects": projects,
-        "awards": awards,
-        "educations": educations
-    } 
+    try:
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info(f"사용자 ID {user_id}의 이력서 상세 정보 조회 시작")
+        
+        # 이력서 기본 정보 조회
+        resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.id == user_id).first()
+        if not resume:
+            logger.warning(f"사용자 ID {user_id}의 이력서를 찾을 수 없습니다.")
+            raise HTTPException(status_code=404, detail="사용자의 이력서를 찾을 수 없습니다.")
+        
+        logger.info(f"이력서 기본 정보 조회 성공: {resume.name}")
+        
+        # 포트폴리오 조회
+        portfolios = db.query(Portfolio).filter(Portfolio.user_id == user_id).all()
+        logger.info(f"포트폴리오 {len(portfolios)}개 조회 성공")
+        
+        # 프로젝트 조회
+        projects = db.query(Project).filter(Project.user_id == user_id).all()
+        logger.info(f"프로젝트 {len(projects)}개 조회 성공")
+        
+        # 수상 내역 조회
+        awards = db.query(Award).filter(Award.resume_id == resume.id).all()
+        logger.info(f"수상 내역 {len(awards)}개 조회 성공")
+        
+        # 교육 내역 조회
+        educations = db.query(Education).filter(Education.resume_id == resume.id).all()
+        logger.info(f"교육 내역 {len(educations)}개 조회 성공")
+        
+        # 응답 데이터 구성
+        response_data = {
+            "resume": resume,
+            "portfolios": portfolios,
+            "projects": projects,
+            "awards": awards,
+            "educations": educations
+        }
+        
+        logger.info(f"사용자 ID {user_id}의 이력서 상세 정보 조회 완료")
+        return response_data
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"이력서 상세 정보 조회 중 오류 발생: {str(e)}")
+        logger.error(f"사용자 ID: {user_id}")
+        raise HTTPException(status_code=500, detail=f"이력서 상세 정보 조회 중 오류가 발생했습니다: {str(e)}") 
+
+@router.get("/test/{user_id}", summary="이력서 상세 정보 조회 테스트")
+def test_resume_detail(
+    user_id: int = Path(..., description="테스트할 사용자의 ID"),
+    db: Session = Depends(get_db)
+):
+    """
+    이력서 상세 정보 조회 테스트용 엔드포인트
+    각 단계별로 데이터를 확인할 수 있습니다.
+    """
+    try:
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info(f"테스트: 사용자 ID {user_id}의 이력서 상세 정보 조회 시작")
+        
+        # 1. 이력서 기본 정보 조회 테스트
+        resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.id == user_id).first()
+        if not resume:
+            return {
+                "error": "이력서를 찾을 수 없습니다",
+                "user_id": user_id,
+                "message": f"사용자 ID {user_id}에 해당하는 이력서가 없습니다."
+            }
+        
+        # 2. 포트폴리오 조회 테스트
+        portfolios = db.query(Portfolio).filter(Portfolio.user_id == user_id).all()
+        
+        # 3. 프로젝트 조회 테스트
+        projects = db.query(Project).filter(Project.user_id == user_id).all()
+        
+        # 4. 수상 내역 조회 테스트
+        awards = db.query(Award).filter(Award.resume_id == resume.id).all()
+        
+        # 5. 교육 내역 조회 테스트
+        educations = db.query(Education).filter(Education.resume_id == resume.id).all()
+        
+        return {
+            "success": True,
+            "user_id": user_id,
+            "resume_found": True,
+            "resume_name": resume.name,
+            "resume_email": resume.email,
+            "counts": {
+                "portfolios": len(portfolios),
+                "projects": len(projects),
+                "awards": len(awards),
+                "educations": len(educations)
+            },
+            "sample_data": {
+                "resume": {
+                    "id": resume.id,
+                    "name": resume.name,
+                    "email": resume.email,
+                    "job_type": resume.job_type
+                },
+                "portfolios": [
+                    {
+                        "id": p.id,
+                        "project_name": p.project_name,
+                        "is_representative": p.is_representative
+                    } for p in portfolios[:3]  # 최대 3개만
+                ],
+                "projects": [
+                    {
+                        "id": p.id,
+                        "project_name": p.project_name,
+                        "role": p.role,
+                        "tech_stack": p.tech_stack
+                    } for p in projects[:3]  # 최대 3개만
+                ]
+            }
+        }
+        
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"테스트 중 오류 발생: {str(e)}")
+        return {
+            "error": "테스트 중 오류 발생",
+            "error_message": str(e),
+            "user_id": user_id
+        } 
