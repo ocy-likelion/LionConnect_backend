@@ -41,6 +41,8 @@ def create_project(
     
     선택 필드:
     - github_url: GitHub URL
+    
+    중복 등록 허용: 같은 사용자가 같은 이름의 프로젝트를 여러 개 등록할 수 있습니다.
     """
     try:
         # 요청 데이터 로깅
@@ -57,15 +59,37 @@ def create_project(
         }
         logger.info(f"프로젝트 생성 요청 데이터: {request_data}")
         
-        # 유효성 검사
+        # 1. 기본 유효성 검사
         if portfolio_id <= 0:
             raise HTTPException(status_code=400, detail="포트폴리오 ID는 0보다 커야 합니다")
         if user_id <= 0:
             raise HTTPException(status_code=400, detail="사용자 ID는 0보다 커야 합니다")
-        if not project_name.strip():
+        if not project_name or not project_name.strip():
             raise HTTPException(status_code=400, detail="프로젝트명은 비어있을 수 없습니다")
+        if not project_period or not project_period.strip():
+            raise HTTPException(status_code=400, detail="프로젝트 기간은 비어있을 수 없습니다")
+        if not project_intro or not project_intro.strip():
+            raise HTTPException(status_code=400, detail="프로젝트 소개는 비어있을 수 없습니다")
+        if not description or not description.strip():
+            raise HTTPException(status_code=400, detail="프로젝트 설명은 비어있을 수 없습니다")
+        if not role or not role.strip():
+            raise HTTPException(status_code=400, detail="담당 역할은 비어있을 수 없습니다")
+        if not tech_stack or not tech_stack.strip():
+            raise HTTPException(status_code=400, detail="기술 스택은 비어있을 수 없습니다")
         
-        # 프로젝트 생성
+        # 2. 포트폴리오 존재 여부 확인
+        from app.models.portfolio import Portfolio
+        portfolio = db.query(Portfolio).filter(Portfolio.id == portfolio_id).first()
+        if not portfolio:
+            raise HTTPException(status_code=404, detail=f"포트폴리오 ID {portfolio_id}를 찾을 수 없습니다")
+        
+        # 3. 사용자 존재 여부 확인
+        from app.models.resume import ResumeBasicInfo
+        user = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail=f"사용자 ID {user_id}를 찾을 수 없습니다")
+        
+        # 4. 프로젝트 생성 (중복 허용)
         db_project = Project(
             portfolio_id=portfolio_id,
             project_name=project_name.strip(),
@@ -75,7 +99,7 @@ def create_project(
             role=role.strip(),
             tech_stack=tech_stack.strip(),
             user_id=user_id,
-            github_url=github_url.strip() if github_url else None,
+            github_url=github_url.strip() if github_url and github_url.strip() else None,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow()
         )
@@ -143,59 +167,119 @@ def create_project_json(
 
 @router.post("/test", summary="프로젝트 생성 테스트")
 def test_project_creation(
-    project_data: dict,
+    portfolio_id: int = Form(..., description="포트폴리오 ID"),
+    project_name: str = Form(..., description="프로젝트명"),
+    project_period: str = Form(..., description="프로젝트 기간"),
+    project_intro: str = Form(..., description="프로젝트 소개"),
+    description: str = Form(..., description="프로젝트 설명"),
+    role: str = Form(..., description="담당 역할"),
+    tech_stack: str = Form(..., description="기술 스택"),
+    user_id: int = Form(..., description="사용자 ID"),
+    github_url: Optional[str] = Form(None, description="GitHub URL"),
     db: Session = Depends(get_db)
 ):
     """
-    프로젝트 생성 테스트용 엔드포인트
-    요청 데이터를 로깅하여 문제를 파악할 수 있습니다.
+    프로젝트 생성 요청을 테스트합니다.
+    실제로 프로젝트를 생성하지 않고 요청 데이터만 검증합니다.
     """
     try:
-        logger.info(f"테스트 요청 데이터: {project_data}")
+        # 요청 데이터 수집
+        request_data = {
+            "portfolio_id": portfolio_id,
+            "project_name": project_name,
+            "project_period": project_period,
+            "project_intro": project_intro,
+            "description": description,
+            "role": role,
+            "tech_stack": tech_stack,
+            "user_id": user_id,
+            "github_url": github_url
+        }
         
-        # 데이터 유효성 검사
-        required_fields = ['portfolio_id', 'project_name', 'project_period', 'project_intro', 'description', 'role', 'tech_stack', 'user_id']
-        missing_fields = []
+        logger.info(f"테스트 요청 데이터: {request_data}")
         
-        for field in required_fields:
-            if field not in project_data or project_data[field] is None or project_data[field] == "":
-                missing_fields.append(field)
-        
-        if missing_fields:
-            return {
-                "error": "필수 필드 누락",
-                "missing_fields": missing_fields,
-                "received_data": project_data
+        # 데이터 타입 검증
+        validation_results = {
+            "portfolio_id": {
+                "value": portfolio_id,
+                "type": type(portfolio_id).__name__,
+                "valid": isinstance(portfolio_id, int) and portfolio_id > 0
+            },
+            "project_name": {
+                "value": project_name,
+                "type": type(project_name).__name__,
+                "valid": isinstance(project_name, str) and project_name.strip() != ""
+            },
+            "project_period": {
+                "value": project_period,
+                "type": type(project_period).__name__,
+                "valid": isinstance(project_period, str) and project_period.strip() != ""
+            },
+            "project_intro": {
+                "value": project_intro,
+                "type": type(project_intro).__name__,
+                "valid": isinstance(project_intro, str) and project_intro.strip() != ""
+            },
+            "description": {
+                "value": description,
+                "type": type(description).__name__,
+                "valid": isinstance(description, str) and description.strip() != ""
+            },
+            "role": {
+                "value": role,
+                "type": type(role).__name__,
+                "valid": isinstance(role, str) and role.strip() != ""
+            },
+            "tech_stack": {
+                "value": tech_stack,
+                "type": type(tech_stack).__name__,
+                "valid": isinstance(tech_stack, str) and tech_stack.strip() != ""
+            },
+            "user_id": {
+                "value": user_id,
+                "type": type(user_id).__name__,
+                "valid": isinstance(user_id, int) and user_id > 0
+            },
+            "github_url": {
+                "value": github_url,
+                "type": type(github_url).__name__ if github_url else "None",
+                "valid": github_url is None or (isinstance(github_url, str) and github_url.strip() != "")
             }
+        }
         
-        # 타입 검사
-        type_errors = []
-        if not isinstance(project_data.get('portfolio_id'), int):
-            type_errors.append("portfolio_id는 정수여야 합니다")
-        if not isinstance(project_data.get('user_id'), int):
-            type_errors.append("user_id는 정수여야 합니다")
-        if not isinstance(project_data.get('project_name'), str):
-            type_errors.append("project_name은 문자열이어야 합니다")
+        # 포트폴리오 존재 여부 확인
+        from app.models.portfolio import Portfolio
+        portfolio = db.query(Portfolio).filter(Portfolio.id == portfolio_id).first()
+        portfolio_exists = portfolio is not None
         
-        if type_errors:
-            return {
-                "error": "타입 오류",
-                "type_errors": type_errors,
-                "received_data": project_data
-            }
+        # 사용자 존재 여부 확인
+        from app.models.resume import ResumeBasicInfo
+        user = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.id == user_id).first()
+        user_exists = user is not None
+        
+        # 기존 프로젝트 개수 확인
+        existing_projects = db.query(Project).filter(
+            Project.user_id == user_id,
+            Project.project_name == project_name.strip()
+        ).count()
         
         return {
-            "success": True,
-            "message": "데이터 형식이 올바릅니다",
-            "received_data": project_data
+            "message": "프로젝트 생성 테스트 완료",
+            "request_data": request_data,
+            "validation_results": validation_results,
+            "database_checks": {
+                "portfolio_exists": portfolio_exists,
+                "user_exists": user_exists,
+                "existing_same_name_projects": existing_projects
+            },
+            "all_valid": all(field["valid"] for field in validation_results.values()) and portfolio_exists and user_exists
         }
         
     except Exception as e:
         logger.error(f"테스트 중 오류 발생: {str(e)}")
         return {
-            "error": "테스트 중 오류 발생",
-            "error_message": str(e),
-            "received_data": project_data
+            "error": str(e),
+            "message": "테스트 중 오류가 발생했습니다"
         }
 
 @router.get("/", response_model=ProjectListResponse)
