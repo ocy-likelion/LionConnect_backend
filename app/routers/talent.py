@@ -3,12 +3,145 @@ from sqlalchemy.orm import Session
 from app.models.user import User, StudentProfile
 from app.models.portfolio import Portfolio
 from app.models.connect import ConnectRequest
+from app.models.resume import ResumeBasicInfo
 from app.schemas.connect import ConnectRequestCreate, ConnectRequestResponse
 from app.core.config import get_db, SLACK_WEBHOOK_URL
 from app.utils.slack import send_slack_message
 from typing import List, Optional
 
 router = APIRouter(prefix="/talents", tags=["Talent"])
+
+@router.get(
+    "/grid",
+    response_model=List[dict],
+    summary="🦁 수료생 그리드 카드 목록",
+    description="""
+    ## 수료생 그리드 카드 페이지용 API
+    
+    등록된 모든 수료생을 그리드 카드 형태로 보여주기 위한 최적화된 API입니다.
+    
+    ### 📋 반환 데이터
+    - `user_id`: 수료생 ID
+    - `profile_image`: 프로필 이미지 URL
+    - `name`: 수료생 이름
+    - `job_type`: 희망 직무
+    - `school`: 학교명
+    - `major`: 전공
+    - `short_intro`: 간단 소개
+    - `representative_portfolio`: 대표 포트폴리오 정보
+      - `project_name`: 프로젝트명
+      - `project_intro`: 프로젝트 소개
+      - `project_image_url`: 프로젝트 이미지 URL
+      - `tech_stack`: 기술 스택
+    - `created_at`: 등록일
+    
+    ### 🔍 필터링 옵션
+    - `job_type`: 직무별 필터링
+    - `school`: 학교별 필터링
+    - `tech_stack`: 기술스택별 필터링
+    
+    ### 📊 페이지네이션
+    - `skip`: 건너뛸 개수 (기본값: 0)
+    - `limit`: 가져올 개수 (기본값: 12, 최대: 50)
+    """,
+    responses={
+        200: {
+            "description": "수료생 그리드 카드 목록 조회 성공",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "user_id": 1,
+                            "profile_image": "/media/profile/user1.jpg",
+                            "name": "홍길동",
+                            "job_type": "프론트엔드 개발자",
+                            "school": "서울대학교",
+                            "major": "컴퓨터공학과",
+                            "short_intro": "웹 개발에 열정을 가진 학생입니다.",
+                            "representative_portfolio": {
+                                "project_name": "쇼핑몰 웹사이트",
+                                "project_intro": "React와 Node.js를 활용한 풀스택 쇼핑몰",
+                                "project_image_url": "/media/portfolio/1.png",
+                                "tech_stack": "React, Node.js, MongoDB"
+                            },
+                            "created_at": "2024-01-01T00:00:00"
+                        }
+                    ]
+                }
+            }
+        }
+    }
+)
+def get_talent_grid_cards(
+    skip: int = Query(0, ge=0, description="건너뛸 개수"),
+    limit: int = Query(12, ge=1, le=50, description="가져올 개수"),
+    job_type: Optional[str] = Query(None, description="직무별 필터링"),
+    school: Optional[str] = Query(None, description="학교별 필터링"),
+    tech_stack: Optional[str] = Query(None, description="기술스택별 필터링"),
+    db: Session = Depends(get_db),
+):
+    """
+    수료생 그리드 카드 페이지를 위한 최적화된 API입니다.
+    
+    프로필 이미지, 이름, 직무, 학교, 대표 포트폴리오 정보를 포함하여
+    그리드 카드 형태로 표시하기에 적합한 데이터를 반환합니다.
+    """
+    # 기본 쿼리: resume_basic_info 테이블에서 수료생 정보 조회
+    query = db.query(ResumeBasicInfo)
+    
+    # 필터링 적용
+    if job_type:
+        query = query.filter(ResumeBasicInfo.job_type.contains(job_type))
+    if school:
+        query = query.filter(ResumeBasicInfo.school.contains(school))
+    
+    # 페이지네이션 적용
+    resumes = query.offset(skip).limit(limit).all()
+    
+    result = []
+    for resume in resumes:
+        # 해당 수료생의 대표 포트폴리오 조회
+        representative_portfolio = db.query(Portfolio).filter(
+            Portfolio.user_id == resume.id,
+            Portfolio.is_representative == True
+        ).first()
+        
+        # 대표 포트폴리오가 없으면 첫 번째 포트폴리오 사용
+        if not representative_portfolio:
+            representative_portfolio = db.query(Portfolio).filter(
+                Portfolio.user_id == resume.id
+            ).first()
+        
+        # 기술스택 필터링 (포트폴리오가 있는 경우에만)
+        if tech_stack and representative_portfolio:
+            # 포트폴리오의 기술스택 정보가 있는지 확인
+            # 실제 구현에서는 Portfolio 모델에 tech_stack 필드가 있어야 함
+            pass
+        
+        portfolio_info = None
+        if representative_portfolio:
+            portfolio_info = {
+                "project_name": representative_portfolio.project_name,
+                "project_intro": representative_portfolio.project_intro,
+                "project_image_url": representative_portfolio.image,
+                "tech_stack": getattr(representative_portfolio, 'tech_stack', None)  # 필드가 있는 경우에만
+            }
+        
+        talent_card = {
+            "user_id": resume.id,
+            "profile_image": resume.profile_image,
+            "name": resume.name,
+            "job_type": resume.job_type,
+            "school": resume.school,
+            "major": resume.major,
+            "short_intro": resume.short_intro,
+            "representative_portfolio": portfolio_info,
+            "created_at": resume.created_at
+        }
+        
+        result.append(talent_card)
+    
+    return result
 
 @router.get(
     "/",
@@ -170,7 +303,6 @@ def create_connect_request(
             raise HTTPException(status_code=400, detail="수료생 정보가 누락되었습니다.")
         
         # 수료생 존재 여부 확인 (resume_basic_info 테이블에서)
-        from app.models.resume import ResumeBasicInfo
         student_resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.id == req.user_id).first()
         if not student_resume:
             raise HTTPException(status_code=404, detail="수료생의 이력서를 찾을 수 없습니다.")

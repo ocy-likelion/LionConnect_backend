@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🦁 LionConnect - 수료생 인재 탐색</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .filters {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .filter-group select, .filter-group input {
+            padding: 8px 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .filter-group select:focus, .filter-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s ease;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .talent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .talent-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .talent-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            position: relative;
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3rem;
+        }
+
+        .profile-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .card-body {
+            padding: 25px;
+        }
+
+        .talent-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .talent-job {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+
+        .talent-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .info-icon {
+            width: 16px;
+            height: 16px;
+            opacity: 0.7;
+        }
+
+        .talent-intro {
+            color: #555;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .portfolio-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .portfolio-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .portfolio-intro {
+            color: #666;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .tech-tag {
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .connect-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .connect-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 40px;
+        }
+
+        .page-btn {
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .page-btn:hover, .page-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        @media (max-width: 768px) {
+            .talent-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🦁 LionConnect</h1>
+            <p>수료생 인재 탐색 및 연결 플랫폼</p>
+        </div>
+
+        <div class="filters">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="jobType">직무</label>
+                    <select id="jobType">
+                        <option value="">전체</option>
+                        <option value="프론트엔드">프론트엔드</option>
+                        <option value="백엔드">백엔드</option>
+                        <option value="풀스택">풀스택</option>
+                        <option value="기획">기획</option>
+                        <option value="디자인">디자인</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="school">학교</label>
+                    <input type="text" id="school" placeholder="학교명 입력">
+                </div>
+                <div class="filter-group">
+                    <label for="techStack">기술스택</label>
+                    <input type="text" id="techStack" placeholder="React, Python 등">
+                </div>
+                <button class="search-btn" onclick="loadTalents()">🔍 검색</button>
+            </div>
+        </div>
+
+        <div id="talentGrid" class="talent-grid">
+            <!-- 수료생 카드들이 여기에 동적으로 로드됩니다 -->
+        </div>
+
+        <div class="pagination" id="pagination">
+            <!-- 페이지네이션이 여기에 동적으로 로드됩니다 -->
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 0;
+        const pageSize = 12;
+
+        // 페이지 로드 시 수료생 목록 로드
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTalents();
+        });
+
+        // 수료생 목록 로드 함수
+        async function loadTalents(page = 0) {
+            const jobType = document.getElementById('jobType').value;
+            const school = document.getElementById('school').value;
+            const techStack = document.getElementById('techStack').value;
+
+            // 로딩 표시
+            document.getElementById('talentGrid').innerHTML = '<div class="loading">🔄 수료생 정보를 불러오는 중...</div>';
+
+            try {
+                // API 호출
+                const params = new URLSearchParams({
+                    skip: page * pageSize,
+                    limit: pageSize
+                });
+
+                if (jobType) params.append('job_type', jobType);
+                if (school) params.append('school', school);
+                if (techStack) params.append('tech_stack', techStack);
+
+                const response = await fetch(`/talents/grid?${params}`);
+                const talents = await response.json();
+
+                displayTalents(talents);
+                displayPagination(page, talents.length);
+            } catch (error) {
+                console.error('Error loading talents:', error);
+                document.getElementById('talentGrid').innerHTML = 
+                    '<div class="no-results">❌ 데이터를 불러오는 중 오류가 발생했습니다.</div>';
+            }
+        }
+
+        // 수료생 카드 표시 함수
+        function displayTalents(talents) {
+            const grid = document.getElementById('talentGrid');
+            
+            if (talents.length === 0) {
+                grid.innerHTML = '<div class="no-results">🔍 검색 결과가 없습니다.</div>';
+                return;
+            }
+
+            grid.innerHTML = talents.map(talent => `
+                <div class="talent-card">
+                    <div class="card-header">
+                        ${talent.profile_image ? 
+                            `<img src="${talent.profile_image}" alt="${talent.name}" class="profile-image">` :
+                            `<div style="font-size: 2rem;">👤</div>`
+                        }
+                    </div>
+                    <div class="card-body">
+                        <div class="talent-name">${talent.name}</div>
+                        <div class="talent-job">${talent.job_type}</div>
+                        
+                        <div class="talent-info">
+                            <div class="info-item">
+                                <span class="info-icon">🎓</span>
+                                <span>${talent.school} ${talent.major}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="talent-intro">${talent.short_intro}</div>
+                        
+                        ${talent.representative_portfolio ? `
+                            <div class="portfolio-section">
+                                <div class="portfolio-title">📁 ${talent.representative_portfolio.project_name}</div>
+                                <div class="portfolio-intro">${talent.representative_portfolio.project_intro}</div>
+                                ${talent.representative_portfolio.tech_stack ? `
+                                    <div class="tech-stack">
+                                        ${talent.representative_portfolio.tech_stack.split(',').map(tech => 
+                                            `<span class="tech-tag">${tech.trim()}</span>`
+                                        ).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+                        
+                        <button class="connect-btn" onclick="connectWithTalent(${talent.user_id})">
+                            💬 커넥트 요청
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 페이지네이션 표시 함수
+        function displayPagination(currentPage, resultCount) {
+            const pagination = document.getElementById('pagination');
+            const totalPages = Math.ceil(resultCount / pageSize);
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let paginationHTML = '';
+            
+            // 이전 페이지 버튼
+            if (currentPage > 0) {
+                paginationHTML += `<button class="page-btn" onclick="loadTalents(${currentPage - 1})">← 이전</button>`;
+            }
+            
+            // 페이지 번호들
+            for (let i = 0; i < totalPages; i++) {
+                paginationHTML += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="loadTalents(${i})">${i + 1}</button>`;
+            }
+            
+            // 다음 페이지 버튼
+            if (currentPage < totalPages - 1) {
+                paginationHTML += `<button class="page-btn" onclick="loadTalents(${currentPage + 1})">다음 →</button>`;
+            }
+            
+            pagination.innerHTML = paginationHTML;
+        }
+
+        // 커넥트 요청 함수
+        function connectWithTalent(userId) {
+            // 커넥트 요청 모달 또는 페이지로 이동
+            alert(`수료생 ID ${userId}에게 커넥트 요청을 보냅니다.`);
+            // 실제 구현에서는 커넥트 요청 폼으로 이동하거나 모달을 띄움
+        }
+
+        // 검색 버튼 클릭 시 페이지 초기화
+        function loadTalents() {
+            currentPage = 0;
+            loadTalents(0);
+        }
+    </script>
+</body>
+</html>

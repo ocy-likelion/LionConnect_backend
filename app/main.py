@@ -160,6 +160,11 @@ def project_form(request: Request):
 def connect_request_form(request: Request):
     return templates.TemplateResponse("connect_request.html", {"request": request})
 
+@app.get("/talent-grid", response_class=HTMLResponse)
+def talent_grid_page(request: Request):
+    """수료생 그리드 카드 페이지"""
+    return templates.TemplateResponse("talent_grid.html", {"request": request})
+
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
