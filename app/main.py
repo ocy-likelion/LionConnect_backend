@@ -11,6 +11,7 @@ from app.routers import resume, portfolio, project, auth, talent
 from app.routers.award import router as award_router
 from app.routers.education import router as education_router
 from app.routers.connect import router as connect_router
+from app.routers.admin_bulk import router as admin_bulk_router
 
 app = FastAPI(
     title="🦁 LionConnect API",
@@ -141,6 +142,7 @@ app.include_router(talent.router)
 app.include_router(award_router)
 app.include_router(education_router)
 app.include_router(connect_router)
+app.include_router(admin_bulk_router)
 
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
 
