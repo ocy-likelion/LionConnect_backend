@@ -9,7 +9,7 @@ SLACK_WEBHOOK_URL = os.environ.get('SLACK_WEBHOOK_URL', None)
 # 데이터베이스 설정
 SQLALCHEMY_DATABASE_URL = os.environ.get(
     "DATABASE_URL",
-    "postgresql://lionconnect_user:gKIoR3YWUjnOjpbZgPXWygVncYMaSi0o@dpg-d1mek9e3jp1c73ennt6g-a/lionconnect"
+    "postgresql://lionconnect_1_user:3kDMui1zhhADrBm9RnXVwfMHk5tkLNN8@dpg-d2al9lruibrs73ep97n0-a.singapore-postgres.render.com/lionconnect_1"
 )
 
 # DB 종류에 따라 connect_args 분기
