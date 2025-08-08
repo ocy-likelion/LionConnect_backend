@@ -8,7 +8,6 @@ class Project(Base):
     __tablename__ = "project"
 
     id = Column(Integer, primary_key=True, index=True)
-    portfolio_id = Column(Integer, nullable=False)  # 포트폴리오 참조
     project_name = Column(String, nullable=False)
     project_period = Column(String, nullable=False)
     project_intro = Column(String, nullable=False)

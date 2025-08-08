@@ -3,7 +3,6 @@ from typing import Optional, List
 from datetime import datetime
 
 class ProjectBase(BaseModel):
-    portfolio_id: int = Field(..., description="포트폴리오 ID", gt=0)
     project_name: str = Field(..., description="프로젝트명", min_length=1, max_length=200)
     project_period: str = Field(..., description="프로젝트 기간", min_length=1, max_length=100)
     project_intro: str = Field(..., description="프로젝트 소개", min_length=1, max_length=500)
@@ -12,12 +11,6 @@ class ProjectBase(BaseModel):
     tech_stack: str = Field(..., description="기술 스택", min_length=1, max_length=200)
     user_id: int = Field(..., description="사용자 ID", gt=0)
     github_url: Optional[str] = Field(None, description="GitHub URL", max_length=500)
-
-    @validator('portfolio_id')
-    def validate_portfolio_id(cls, v):
-        if v <= 0:
-            raise ValueError('포트폴리오 ID는 0보다 커야 합니다')
-        return v
 
     @validator('user_id')
     def validate_user_id(cls, v):
@@ -35,7 +28,6 @@ class ProjectCreate(ProjectBase):
     pass
 
 class ProjectUpdate(BaseModel):
-    portfolio_id: Optional[int] = Field(None, description="포트폴리오 ID", gt=0)
     project_name: Optional[str] = Field(None, description="프로젝트명", min_length=1, max_length=200)
     project_period: Optional[str] = Field(None, description="프로젝트 기간", min_length=1, max_length=100)
     project_intro: Optional[str] = Field(None, description="프로젝트 소개", min_length=1, max_length=500)
@@ -43,12 +35,6 @@ class ProjectUpdate(BaseModel):
     role: Optional[str] = Field(None, description="담당 역할", min_length=1, max_length=100)
     tech_stack: Optional[str] = Field(None, description="기술 스택", min_length=1, max_length=200)
     github_url: Optional[str] = Field(None, description="GitHub URL", max_length=500)
-
-    @validator('portfolio_id')
-    def validate_portfolio_id(cls, v):
-        if v is not None and v <= 0:
-            raise ValueError('포트폴리오 ID는 0보다 커야 합니다')
-        return v
 
     @validator('github_url')
     def validate_github_url(cls, v):
@@ -58,7 +44,6 @@ class ProjectUpdate(BaseModel):
 
 class ProjectResponse(BaseModel):
     id: int
-    portfolio_id: int
     project_name: str
     project_period: str
     project_intro: str

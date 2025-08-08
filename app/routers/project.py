@@ -15,7 +15,6 @@ router = APIRouter(prefix="/projects", tags=["Project"])
 
 @router.post("/", response_model=ProjectResponse)
 def create_project(
-    portfolio_id: int = Form(..., description="포트폴리오 ID"),
     project_name: str = Form(..., description="프로젝트명"),
     project_period: str = Form(..., description="프로젝트 기간"),
     project_intro: str = Form(..., description="프로젝트 소개"),
@@ -30,7 +29,6 @@ def create_project(
     프로젝트를 생성합니다. (FormData 지원)
     
     필수 필드:
-    - portfolio_id: 포트폴리오 ID
     - project_name: 프로젝트명
     - project_period: 프로젝트 기간
     - project_intro: 프로젝트 소개
@@ -47,7 +45,6 @@ def create_project(
     try:
         # 요청 데이터 로깅
         request_data = {
-            "portfolio_id": portfolio_id,
             "project_name": project_name,
             "project_period": project_period,
             "project_intro": project_intro,
@@ -60,8 +57,6 @@ def create_project(
         logger.info(f"프로젝트 생성 요청 데이터: {request_data}")
         
         # 1. 기본 유효성 검사
-        if portfolio_id <= 0:
-            raise HTTPException(status_code=400, detail="포트폴리오 ID는 0보다 커야 합니다")
         if user_id <= 0:
             raise HTTPException(status_code=400, detail="사용자 ID는 0보다 커야 합니다")
         if not project_name or not project_name.strip():
@@ -77,21 +72,14 @@ def create_project(
         if not tech_stack or not tech_stack.strip():
             raise HTTPException(status_code=400, detail="기술 스택은 비어있을 수 없습니다")
         
-        # 2. 포트폴리오 존재 여부 확인
-        from app.models.portfolio import Portfolio
-        portfolio = db.query(Portfolio).filter(Portfolio.id == portfolio_id).first()
-        if not portfolio:
-            raise HTTPException(status_code=404, detail=f"포트폴리오 ID {portfolio_id}를 찾을 수 없습니다")
-        
-        # 3. 사용자 존재 여부 확인
+        # 2. 사용자 존재 여부 확인
         from app.models.resume import ResumeBasicInfo
         user = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.id == user_id).first()
         if not user:
             raise HTTPException(status_code=404, detail=f"사용자 ID {user_id}를 찾을 수 없습니다")
         
-        # 4. 프로젝트 생성 (중복 허용)
+        # 3. 프로젝트 생성 (중복 허용)
         db_project = Project(
-            portfolio_id=portfolio_id,
             project_name=project_name.strip(),
             project_period=project_period.strip(),
             project_intro=project_intro.strip(),
@@ -137,7 +125,6 @@ def create_project_json(
         
         # 프로젝트 생성
         db_project = Project(
-            portfolio_id=project.portfolio_id,
             project_name=project.project_name,
             project_period=project.project_period,
             project_intro=project.project_intro,
@@ -167,7 +154,6 @@ def create_project_json(
 
 @router.post("/test", summary="프로젝트 생성 테스트")
 def test_project_creation(
-    portfolio_id: int = Form(..., description="포트폴리오 ID"),
     project_name: str = Form(..., description="프로젝트명"),
     project_period: str = Form(..., description="프로젝트 기간"),
     project_intro: str = Form(..., description="프로젝트 소개"),
@@ -185,7 +171,6 @@ def test_project_creation(
     try:
         # 요청 데이터 수집
         request_data = {
-            "portfolio_id": portfolio_id,
             "project_name": project_name,
             "project_period": project_period,
             "project_intro": project_intro,
@@ -200,11 +185,6 @@ def test_project_creation(
         
         # 데이터 타입 검증
         validation_results = {
-            "portfolio_id": {
-                "value": portfolio_id,
-                "type": type(portfolio_id).__name__,
-                "valid": isinstance(portfolio_id, int) and portfolio_id > 0
-            },
             "project_name": {
                 "value": project_name,
                 "type": type(project_name).__name__,
@@ -247,11 +227,6 @@ def test_project_creation(
             }
         }
         
-        # 포트폴리오 존재 여부 확인
-        from app.models.portfolio import Portfolio
-        portfolio = db.query(Portfolio).filter(Portfolio.id == portfolio_id).first()
-        portfolio_exists = portfolio is not None
-        
         # 사용자 존재 여부 확인
         from app.models.resume import ResumeBasicInfo
         user = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.id == user_id).first()
@@ -268,11 +243,10 @@ def test_project_creation(
             "request_data": request_data,
             "validation_results": validation_results,
             "database_checks": {
-                "portfolio_exists": portfolio_exists,
                 "user_exists": user_exists,
                 "existing_same_name_projects": existing_projects
             },
-            "all_valid": all(field["valid"] for field in validation_results.values()) and portfolio_exists and user_exists
+            "all_valid": all(field["valid"] for field in validation_results.values()) and user_exists
         }
         
     except Exception as e:
