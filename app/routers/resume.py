@@ -4,7 +4,9 @@ from app.schemas.resume import ResumeBasicInfoResponse
 from app.models.resume import ResumeBasicInfo
 from app.models.user import User
 from app.core.config import get_db
+import os
 from app.utils.file import save_profile_image
+from app.utils.storage import upload_image
 from app.utils.auth import get_current_user
 from typing import Optional
 from datetime import datetime
@@ -131,7 +133,11 @@ def create_resume_basic_info(
 
     image_path = None
     if profile_image:
-        image_path = save_profile_image(profile_image)
+        # Supabase 설정이 있으면 Supabase Storage로 업로드, 없으면 로컬 저장
+        if os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_SERVICE_ROLE_KEY"):
+            image_path = upload_image(profile_image, folder="profile")
+        else:
+            image_path = save_profile_image(profile_image)
 
     resume = ResumeBasicInfo(
         profile_image=image_path,
