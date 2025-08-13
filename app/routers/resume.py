@@ -271,26 +271,30 @@ def get_user_resume_detail(
         
         logger.info(f"사용자 ID {user_id}의 이력서 상세 정보 조회 시작")
         
-        # 사용자 및 이력서 기본 정보 조회
+        # 사용자 및 이력서 기본 정보 조회 (유연한 ID 해석: User.id 또는 ResumeBasicInfo.id)
         user = db.query(User).filter(User.id == user_id).first()
-        if not user:
-            logger.warning(f"사용자 ID {user_id}를 찾을 수 없습니다.")
-            raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+        resume = None
 
-        # 현재 스키마에서는 ResumeBasicInfo와 User가 직접 키로 연결되어 있지 않아 이메일로 매칭
-        resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.email == user.email).first()
-        if not resume:
-            logger.warning(f"사용자 ID {user_id}의 이력서를 찾을 수 없습니다.")
-            raise HTTPException(status_code=404, detail="사용자의 이력서를 찾을 수 없습니다.")
+        if user:
+            # 현재 스키마에서는 ResumeBasicInfo와 User가 직접 키로 연결되어 있지 않아 이메일로 매칭
+            resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.email == user.email).first()
+        else:
+            # user가 없으면 user_id를 resume.id로 간주하여 이력서 먼저 조회
+            resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.id == user_id).first()
+            if not resume:
+                logger.warning(f"사용자 ID {user_id}의 이력서를 찾을 수 없습니다.")
+                raise HTTPException(status_code=404, detail="사용자의 이력서를 찾을 수 없습니다.")
+            # 이력서가 있으면 이메일로 사용자 역조회 (없을 수도 있음)
+            user = db.query(User).filter(User.email == resume.email).first()
         
         logger.info(f"이력서 기본 정보 조회 성공: {resume.name}")
         
-        # 포트폴리오 조회 (User.id 기준)
-        portfolios = db.query(Portfolio).filter(Portfolio.user_id == user.id).all()
+        # 포트폴리오 조회 (User.id 기준, user 없으면 빈 배열)
+        portfolios = db.query(Portfolio).filter(Portfolio.user_id == user.id).all() if user else []
         logger.info(f"포트폴리오 {len(portfolios)}개 조회 성공")
         
-        # 프로젝트 조회 (User.id 기준)
-        projects = db.query(Project).filter(Project.user_id == user.id).all()
+        # 프로젝트 조회 (User.id 기준, user 없으면 빈 배열)
+        projects = db.query(Project).filter(Project.user_id == user.id).all() if user else []
         logger.info(f"프로젝트 {len(projects)}개 조회 성공")
         
         # 수상 내역 조회
@@ -337,28 +341,26 @@ def test_resume_detail(
         
         logger.info(f"테스트: 사용자 ID {user_id}의 이력서 상세 정보 조회 시작")
         
-        # 1. 사용자/이력서 기본 정보 조회 테스트 (이메일 매칭)
+        # 1. 사용자/이력서 기본 정보 조회 테스트 (유연한 ID 해석)
         user = db.query(User).filter(User.id == user_id).first()
-        if not user:
-            return {
-                "error": "사용자를 찾을 수 없습니다",
-                "user_id": user_id,
-                "message": f"사용자 ID {user_id}가 존재하지 않습니다."
-            }
-
-        resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.email == user.email).first()
-        if not resume:
-            return {
-                "error": "이력서를 찾을 수 없습니다",
-                "user_id": user_id,
-                "message": f"사용자 ID {user_id}에 해당하는 이력서가 없습니다."
-            }
+        resume = None
+        if user:
+            resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.email == user.email).first()
+        else:
+            resume = db.query(ResumeBasicInfo).filter(ResumeBasicInfo.id == user_id).first()
+            if not resume:
+                return {
+                    "error": "이력서를 찾을 수 없습니다",
+                    "user_id": user_id,
+                    "message": f"입력 ID {user_id}에 해당하는 사용자/이력서가 없습니다."
+                }
+            user = db.query(User).filter(User.email == resume.email).first()
         
-        # 2. 포트폴리오 조회 테스트 (User.id 기준)
-        portfolios = db.query(Portfolio).filter(Portfolio.user_id == user.id).all()
+        # 2. 포트폴리오 조회 테스트 (User.id 기준, user 없으면 빈 배열)
+        portfolios = db.query(Portfolio).filter(Portfolio.user_id == user.id).all() if user else []
         
-        # 3. 프로젝트 조회 테스트 (User.id 기준)
-        projects = db.query(Project).filter(Project.user_id == user.id).all()
+        # 3. 프로젝트 조회 테스트 (User.id 기준, user 없으면 빈 배열)
+        projects = db.query(Project).filter(Project.user_id == user.id).all() if user else []
         
         # 4. 수상 내역 조회 테스트
         awards = db.query(Award).filter(Award.resume_id == resume.id).all()
