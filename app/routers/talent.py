@@ -100,17 +100,20 @@ def get_talent_grid_cards(
     
     result = []
     for resume in resumes:
-        # 해당 수료생의 대표 포트폴리오 조회
-        representative_portfolio = db.query(Portfolio).filter(
-            Portfolio.user_id == resume.id,
-            Portfolio.is_representative == True
-        ).first()
-        
-        # 대표 포트폴리오가 없으면 첫 번째 포트폴리오 사용
-        if not representative_portfolio:
+        # User.email 과 ResumeBasicInfo.email 을 매칭하여 실제 사용자 ID를 찾은 뒤 포트폴리오 조회
+        matched_user = db.query(User).filter(User.email == resume.email).first()
+
+        representative_portfolio = None
+        if matched_user:
             representative_portfolio = db.query(Portfolio).filter(
-                Portfolio.user_id == resume.id
+                Portfolio.user_id == matched_user.id,
+                Portfolio.is_representative == True
             ).first()
+            # 대표 포트폴리오가 없으면 첫 번째 포트폴리오 사용
+            if not representative_portfolio:
+                representative_portfolio = db.query(Portfolio).filter(
+                    Portfolio.user_id == matched_user.id
+                ).first()
         
         # 기술스택 필터링 (포트폴리오가 있는 경우에만)
         if tech_stack and representative_portfolio:
@@ -135,7 +138,12 @@ def get_talent_grid_cards(
             "school": resume.school,
             "major": resume.major,
             "short_intro": resume.short_intro,
+            # 기존 중첩 정보 유지
             "representative_portfolio": portfolio_info,
+            # 요청한 3개 필드를 최상위에 추가로 노출
+            "portfolio_image": portfolio_info.get("project_image_url") if portfolio_info else None,
+            "project_name": portfolio_info.get("project_name") if portfolio_info else None,
+            "project_intro": portfolio_info.get("project_intro") if portfolio_info else None,
             "created_at": resume.created_at
         }
         
